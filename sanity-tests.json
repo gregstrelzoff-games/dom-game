@@ -1,0 +1,86 @@
+[
+  {
+    "test": "index.html exists",
+    "ok": true
+  },
+  {
+    "test": "base.css non-empty",
+    "ok": true
+  },
+  {
+    "test": "poc-game.js non-empty",
+    "ok": true
+  },
+  {
+    "test": "poc-ui.js non-empty",
+    "ok": true
+  },
+  {
+    "test": "main.js non-empty",
+    "ok": true
+  },
+  {
+    "test": "preload has as=style",
+    "ok": true
+  },
+  {
+    "test": "script order game->ui->main",
+    "ok": true
+  },
+  {
+    "test": "title v9.2",
+    "ok": true
+  },
+  {
+    "test": "BUILD v9.2",
+    "ok": true
+  },
+  {
+    "test": ".pile override",
+    "ok": true
+  },
+  {
+    "test": ".card override",
+    "ok": true
+  },
+  {
+    "test": "CARD_DEFS present in game.js",
+    "ok": true
+  },
+  {
+    "test": "SUPPLY present in game.js",
+    "ok": true
+  },
+  {
+    "test": "function buy(",
+    "ok": true
+  },
+  {
+    "test": "function render(",
+    "ok": true
+  },
+  {
+    "test": "function init(",
+    "ok": true
+  },
+  {
+    "test": "keydown listener",
+    "ok": true
+  },
+  {
+    "test": "path styles/base.css exists",
+    "ok": true
+  },
+  {
+    "test": "path assets/poc-game.js exists",
+    "ok": true
+  },
+  {
+    "test": "path assets/poc-ui.js exists",
+    "ok": true
+  },
+  {
+    "test": "path assets/main.js exists",
+    "ok": true
+  }
+]
