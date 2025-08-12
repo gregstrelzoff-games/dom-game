@@ -1,0 +1,9 @@
+{
+  "name": "dominion-vercel-starter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/kv": "^1.0.0"
+  }
+}
