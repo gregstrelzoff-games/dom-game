@@ -1,6 +1,6 @@
 // ------------------- Build Tag & Favicon -------------------
 
-const BUILD = { num: 'v9.2', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -570,3 +570,12 @@ const msg = `Sanity failed (supply:${okSupply}, hand5:${okHand}, fns:${okFns}, +
 
 // ------------------- Start -------------------
 init();
+
+// v9.3 ensure init runs once DOM is ready
+if (typeof init === 'function') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+}
