@@ -571,11 +571,41 @@ const msg = `Sanity failed (supply:${okSupply}, hand5:${okHand}, fns:${okFns}, +
 // ------------------- Start -------------------
 init();
 
-// v9.3 ensure init runs once DOM is ready
-if (typeof init === 'function') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
+
+// ===== v9.3.2 Hardening Layer =====
+(function(){
+  // Ensure global namespaces exist
+  window.Chat = window.Chat || {
+    elPanel:null, elBody:null, elInput:null, said:new Set(),
+    init(){}, startGame(){}, endGame(){}, say(){}, post(){}, postUnique(){}, clear(){}
+  };
+  window.Coach = window.Coach || {
+    init(){}, ensureInit(){}, maybeStart(){}, restart(){}
+  };
+  // Defensive init wrapper
+  const __safeInit = (fn)=>{
+    try { fn && fn(); } catch(e){ console.error('Init step failed:', e); }
+  };
+  // Run the original init once DOM is ready, safely
+  if (typeof init === 'function') {
+    const run = ()=>{
+      __safeInit(init);
+      // Try to update build tag if present
+      try {
+        const el = document.getElementById('build');
+        if (el && typeof BUILD !== 'undefined') {
+          el.textContent = 'Build ' + (BUILD.num || 'v9.3.2');
+        }
+      } catch(e){ console.warn('Build tag update failed', e); }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run, { once:true });
+    } else {
+      run();
+    }
   } else {
-    init();
+    console.warn('init() not found at load time; UI will not bootstrap.');
   }
-}
+})();
+// ===== /Hardening =====
+
