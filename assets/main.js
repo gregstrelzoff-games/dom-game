@@ -1,12 +1,12 @@
 // --- Early globals to avoid TDZ ---
 var LOG_SILENT = false;
 var logs = [];              // buffer until UI hooks in
-var LOG_MAX = 200;          // cap log lines for trimming
+var LOG_MAX = 10;           // clamp log lines
 
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.13', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3.14', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -113,7 +113,7 @@ init();
 
 
 // ------------------- Log & Tooltip -------------------
-LOG_MAX = 10; LOG_SILENT =false; logs = [];
+LOG_MAX =  10; LOG_SILENT = false; logs =  [];
 function addLog(msg, cls){ if(LOG_SILENT) return; logs.push({msg, cls}); while(logs.length>LOG_MAX) logs.shift(); const el = document.getElementById('log'); if(el) el.innerHTML = logs.map(l=>`<span class="${l.cls||''}">• ${l.msg}</span>`).join('\n'); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
 
@@ -235,6 +235,27 @@ function render(){
 }
 
 function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinner(); return true; } return false; }
+
+
+
+// v9.3.14: clamp log to last LOG_MAX lines even if other code appends
+(function(){
+  function clampLogTail(){
+    var el = document.getElementById('log');
+    if(!el) return;
+    var lines = (el.textContent || "").split(/\r?\n/);
+    if (lines.length > LOG_MAX) el.textContent = lines.slice(-LOG_MAX).join('\n');
+  }
+  function installClamp(){
+    var el = document.getElementById('log');
+    if(!el) return;
+    var mo = new MutationObserver(function(){ clampLogTail(); });
+    mo.observe(el, {characterData:true, childList:true, subtree:true});
+    clampLogTail();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installClamp, { once:true });
+  else installClamp();
+})();
 
 
 
