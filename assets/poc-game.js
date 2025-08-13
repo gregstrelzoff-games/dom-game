@@ -1,3 +1,4 @@
+
 // ------------------- Card Definitions -------------------
 const CARD_DEFS = {
   Copper:    { name:'Copper',    cost:0, type:'Treasure', value:1, desc:'+1 coin' },
@@ -41,6 +42,8 @@ const SUPPLY = [
   { key:'Workshop', count:10 },
 ];
 
+
+
 // ------------------- Game State -------------------
 const game = {
   player:{ deck:[], discard:[], hand:[], played:[] },
@@ -59,6 +62,8 @@ const game = {
   turnNum:1,
 };
 
+
+
 // ------------------- Helpers -------------------
 function instance(name){ return { ...CARD_DEFS[name] }; }
 function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
@@ -70,7 +75,7 @@ function drawOne(actor){ if(actor.deck.length===0){ actor.deck.push(...actor.dis
 function drawCards(actor,n){ for(let i=0;i<n;i++) drawOne(actor); }
 function vpOfPile(pile){ return pile.reduce((sum,c)=> sum + (c.points||0), 0); }
 function computeScores(){ const p = vpOfPile([...game.player.deck,...game.player.discard,...game.player.hand]); const a = vpOfPile([...game.ai.deck,...game.ai.discard,...game.ai.hand]); return {p,a}; }
-function cardIcon(name){ switch(name){ case 'Copper': return '🟠'; case 'Silver': return '⚪️'; case 'Gold': return '🟡'; case 'Estate': return '🏠'; case 'Duchy': return '🏯'; case 'Province': return '🏰'; case 'Smithy': return '⚒️'; case 'Village': return '🏘️'; case 'Market': return '🛒'; case 'Laboratory': return '🧪'; case 'Festival': return '🎪'; case 'Woodcutter': return '🪓'; case 'Merchant': return '🪙'; case 'Workshop': return '🧰'; default: return '🃏'; } }
+function cardIcon(name){ switch(name){ case 'Copper': return '🟠'; case 'Silver': return '⚪️'; case 'Gold': return '🟡'; case 'Estate': return '🏠'; case 'Duchy': return '🏯'; case 'Province': return '🏰'; case 'Smithy': return '⚒️'; case 'Village': return '🏘️'; case 'Market': return '🛒'; case 'Laboratory': return '🧪'; case 'Festival': return '🎪'; case 'Woodcutter': return '🪓'; case 'Merchant': return '🏬'; case 'Workshop': return '🧰'; default: return '🃏'; } }
 
 function isChoiceOpen(){ return document.getElementById('choiceOverlay').classList.contains('show'); }
 function closeChoiceOverlay(){ const over=document.getElementById('choiceOverlay'); over.classList.remove('show'); game.interactionLock=false; }
@@ -90,6 +95,14 @@ function phaseBand(){ const prov = getPile('Province'); const left = prov? prov.
 function playerCountsHTML(){ const all=[...game.player.deck, ...game.player.discard, ...game.player.hand]; const map={}; const typeTotals={Treasure:0, Victory:0, Action:0}; all.forEach(c=>{ map[c.name]=(map[c.name]||0)+1; typeTotals[c.type]=(typeTotals[c.type]||0)+1; }); const block=(label,names)=>{ const total = typeTotals[label]||0; const details = names.map(n=> `${n} ${map[n]||0}`).join(' · '); return `<div class=\"countGroup\"><div class=\"row\"><span class=\"label\">${label}</span><span class=\"totalWrap\"><span class=\"mini\">total</span><span class=\"totalNum\"><strong>${total}</strong></span></span></div><div class=\"sub\">${details}</div></div>`; }; return [ block('Treasure',['Gold','Silver','Copper']), block('Victory',['Province','Duchy','Estate']), block('Action',['Festival','Laboratory','Market','Merchant','Smithy','Village','Workshop','Woodcutter']) ].join(''); }
 let lastCountsHTML = '';
 
+
+
+// ---------- Debug helpers ----------
+function groupByName(cards){ const m = new Map(); cards.forEach(c=> m.set(c.name, (m.get(c.name)||0)+1)); return [...m.entries()].sort((a,b)=> a[0].localeCompare(b[0])).map(([n,k])=> `${n}×${k}`).join(', '); }
+function writeAIDebug(lines){ const box = document.getElementById('ai-debug'); if(!box) return; if(!game.debugAI){ box.style.display='none'; box.textContent=''; return; } box.style.display='block'; box.textContent = (lines||[]).join('\n'); }
+
+
+
 // ------------------- Actions & Buys (Player) -------------------
 function play(index){ if(game.interactionLock || game.turn!=='player' || game.gameOver) return; const card = game.player.hand[index]; if(!card) return; snapshot(); if(card.type==='Action'){ if(game.phase!=='action' || game.actions<=0) return; game.actions -= 1; const [played] = game.player.hand.splice(index,1); game.player.played.push(played); if(typeof played.effect==='function') played.effect(game, game.player); Sound.play('action'); toast(`Played ${played.name}`); } else if(card.type==='Treasure'){ if(game.phase==='buy') { Sound.play('error'); return; } if(game.phase==='action') game.phase='treasure'; const [tre] = game.player.hand.splice(index,1); game.player.played.push(tre); let add = (tre.value||0); if(tre.name==='Silver' && game.merchantPending.player>0){ add += game.merchantPending.player; addLog(`Merchant boosts Silver: +${game.merchantPending.player}.`); game.merchantPending.player = 0; } game.coins += add; Sound.play('coins'); toast(`+${add} coins`); } render(); }
 
@@ -97,9 +110,13 @@ function autoPlayTreasures(){ if(game.turn!=='player' || game.phase==='buy' || g
 
 function buy(name){ if(game.interactionLock || game.turn!=='player' || game.phase!=='buy' || game.gameOver) return; const pile = getPile(name); const def = CARD_DEFS[name]; if(!pile || !def || pile.count<=0) return; if(game.buys<=0){ Sound.play('error'); toast('No buys left'); return; } if(game.coins < def.cost){ Sound.play('error'); toast('Not enough coins'); return; } snapshot(); game.buys -= 1; game.coins -= def.cost; pile.count -= 1; game.player.discard.push(instance(def.name)); addLog(`You bought ${def.name} for ${def.cost}.`); Sound.play('buy'); toast(`Bought ${def.name} (-${def.cost})`); Chat.say?.('playerBuy', {name:def.name}); checkEndgameFlags(); render(); }
 
+
+
 // ------------------- Turn Flow -------------------
 function cleanupAndDraw(who){ who.discard.push(...who.hand, ...who.played); who.hand.length=0; who.played.length=0; for(let i=0;i<5;i++) drawOne(who); }
 function endTurn(){ if(game.turn!=='player' || game.gameOver) return; game.undo = null; updateUndoUI(); cleanupAndDraw(game.player); lastCountsHTML = playerCountsHTML(); const pc = document.getElementById('playerCounts'); if(pc) pc.innerHTML = lastCountsHTML; if(endIfNeeded()) return; game.turn='ai'; game.actions=1; game.buys=1; game.coins=0; game.phase='action'; game.merchantPending.ai = 0; addLog('AI is thinking...'); render(); setTimeout(aiTurn, 300); }
+
+
 
 // ------------------- AI -------------------
 function aiPlayBestActionStrong(debug){ if(game.aiActions<=0) return false; const hand = game.ai.hand; const hasTerminal = hand.some(c=> c.name==='Smithy' || c.name==='Woodcutter' || c.name==='Workshop'); let idx = -1; if(hand.some(c=>c.name==='Village') && (game.aiActions<=1) && (hasTerminal)){ idx = hand.findIndex(c=>c.name==='Village'); } else if(hand.some(c=>c.name==='Festival')){ idx = hand.findIndex(c=>c.name==='Festival'); } else if(hand.some(c=>c.name==='Market')){ idx = hand.findIndex(c=>c.name==='Market'); } else if(hand.some(c=>c.name==='Laboratory')){ idx = hand.findIndex(c=>c.name==='Laboratory'); } else if(hand.some(c=>c.name==='Merchant')){ idx = hand.findIndex(c=>c.name==='Merchant'); } else if(hand.some(c=>c.name==='Smithy')){ idx = hand.findIndex(c=>c.name==='Smithy'); } else if(hand.some(c=>c.name==='Workshop')){ idx = hand.findIndex(c=>c.name==='Workshop'); } else if(hand.some(c=>c.name==='Village')){ idx = hand.findIndex(c=>c.name==='Village'); } else if(hand.some(c=>c.name==='Woodcutter')){ idx = hand.findIndex(c=>c.name==='Woodcutter'); } if(idx===-1) return false; game.aiActions -= 1; const [act] = hand.splice(idx,1); game.ai.played.push(act); if(debug) debug.push(`Action: ${act.name}`); if(typeof act.effect==='function') act.effect(game, game.ai); return true; }

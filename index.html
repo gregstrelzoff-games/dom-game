@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dominion POC — Player vs AI (v9.3.3)</title>
-  <link rel="stylesheet" href="styles/base.css?v=9.3.3"/>
-  <link rel="preload" href="styles/base.css?v=9.3.3" as="style"/>
+  <title>Dominion POC — Player vs AI (v9.3.4)</title>
+  <link rel="stylesheet" href="styles/base.css?v=v9.3.4"/>
   <link rel="icon" href="G.png" />
 </head>
 <body>
@@ -34,6 +33,7 @@
         </div>
       </div>
     </div>
+
     <div class="row">
       <div class="panel">
         <h2>Supply</h2>
@@ -46,6 +46,7 @@
         <div class="log mono" id="log">Action > Treasure > Buy. Once you buy, you can't play more cards this turn.</div>
       </div>
     </div>
+
     <div class="row" style="margin-top:16px">
       <div class="panel">
         <h2>Game Status</h2>
@@ -68,6 +69,7 @@
         <div id="playerCounts" class="countsList"></div>
       </div>
     </div>
+
     <div class="panel playArea" style="margin-top:16px">
       <h2>Your Hand</h2>
       <div id="player-hand" class="hand"></div>
@@ -80,13 +82,16 @@
       <div class="log mono" style="opacity:.85;padding:0 12px 12px">Shortcuts: A=play Action, T=auto-Treasure, B=Buy, E=End Turn, Z=Undo</div>
     </div>
   </div>
+
   <div class="chat-panel" id="chatPanel">
     <div class="chat-head"><span class="title">Table Talk</span><div class="tools"><button class="btn" id="clearChat" title="Clear chat" style="width:auto">🧹</button></div></div>
     <div class="chat-body" id="chatBody"></div>
     <div class="chat-input"><input id="chatInput" placeholder="Say something…"/><button id="chatSend">Send</button></div>
   </div>
+
   <div class="toast" id="toast"></div>
   <div class="build" id="build"></div>
+
   <div class="overlay" id="overlay">
     <div class="modal" id="modal">
       <h3 id="winnerTitle">Game Over</h3>
@@ -94,6 +99,7 @@
       <div class="footer"><button class="btn" onclick="location.reload()" style="width:auto">New Game</button></div>
     </div>
   </div>
+
   <div class="overlay" id="choiceOverlay">
     <div class="modal" id="choiceModal">
       <h3 id="choiceTitle">Gain a card</h3>
@@ -101,6 +107,7 @@
       <div id="choiceGrid" class="supplyGrid"></div>
     </div>
   </div>
+
   <div class="overlay coach" id="coach" style="background:rgba(2,6,23,.45)">
     <div class="modal step" id="coachStep" style="left:40px;top:40px;min-width:300px">
       <div class="title" id="coachTitle" style="font-weight:800;margin-bottom:4px;color:#fff">Welcome!</div>
@@ -111,9 +118,11 @@
       </div>
     </div>
   </div>
+
   <div class="tooltip" id="tooltip"></div>
-  <script defer src="assets/poc-game.js?v=9.3.3"></script>
-  <script defer src="assets/poc-ui.js?v=9.3.3"></script>
-  <script defer src="assets/main.js?v=9.3.3"></script>
+
+  <script defer src="assets/poc-game.js?v=v9.3.4"></script>
+  <script defer src="assets/poc-ui.js?v=v9.3.4"></script>
+  <script defer src="assets/main.js?v=v9.3.4"></script>
 </body>
 </html>

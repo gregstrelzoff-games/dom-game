@@ -1,5 +1,4 @@
-
-    :root{
+:root{
       /* Requested palette */
       --bg:#ECF2FF;             /* Background */
       --text:#0B0F14;           /* Primary text */
@@ -130,5 +129,3 @@
     .chat-input{display:flex;gap:6px;padding:10px;border-top:1px solid var(--outline);background:#F8FAFF}
     .chat-input input{flex:1;background:#FFFFFF;color:var(--text);border:1px solid var(--outline);border-radius:10px;padding:8px}
     .chat-input button{background:var(--accent);color:#fff;border:1px solid var(--accent-strong);border-radius:10px;padding:8px 10px;cursor:pointer}
-
-  
