@@ -1,1 +1,1 @@
-// UI merged into main.js intentionally to avoid truncation.
+// kept for compatibility; UI is bundled into main.js
