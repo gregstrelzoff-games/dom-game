@@ -1,3 +1,5 @@
+var tip = null;
+tip =  null;
 // --- Early globals to avoid TDZ ---
 var LOG_SILENT = false;
 var logs = [];
@@ -6,7 +8,7 @@ var LOG_MAX = 10;
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.15', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3.17', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -40,9 +42,47 @@ Sound.load();
 
 
 // ------------------- Card Definitions -------------------
+const CARD_DEFS = {
+  Copper:    { name:'Copper',    cost:0, type:'Treasure', value:1, desc:'+1 coin' },
+  Silver:    { name:'Silver',    cost:3, type:'Treasure', value:2, desc:'+2 coins' },
+  Gold:      { name:'Gold',      cost:6, type:'Treasure', value:3, desc:'+3 coins' },
+  Estate:    { name:'Estate',    cost:2, type:'Victory',  points:1, desc:'Worth 1 VP at end of game' },
+  Duchy:     { name:'Duchy',     cost:5, type:'Victory',  points:3, desc:'Worth 3 VP at end of game' },
+  Province:  { name:'Province',  cost:8, type:'Victory',  points:6, desc:'Worth 6 VP at end of game' },
+  Smithy:    { name:'Smithy',    cost:4, type:'Action',   desc:'+3 cards',
+               effect: (g,actor)=>{ drawCards(actor,3); if(actor===g.player) addLog(`You played Smithy and drew 3 cards.`); } },
+  Village:   { name:'Village',   cost:3, type:'Action',   desc:'+1 card, +2 actions',
+               effect: (g,actor)=>{ drawCards(actor,1); if(actor===g.player){ g.actions += 2; addLog(`You played Village: +1 card, +2 actions.`);} else { g.aiActions += 2; } } },
+  Market:    { name:'Market',    cost:5, type:'Action',   desc:'+1 card, +1 action, +1 buy, +1 coin',
+               effect: (g,actor)=>{ drawCards(actor,1); if(actor===g.player){ g.actions += 1; g.buys += 1; g.coins += 1; addLog('You played Market: +1 card, +1 action, +1 buy, +1 coin.'); } else { g.aiActions += 1; g.aiBuys += 1; g.aiCoins += 1; } } },
+  Laboratory:{ name:'Laboratory',cost:5, type:'Action',   desc:'+2 cards, +1 action',
+               effect: (g,actor)=>{ drawCards(actor,2); if(actor===g.player){ g.actions += 1; addLog('You played Laboratory: +2 cards, +1 action.'); } else { g.aiActions += 1; } } },
+  Festival:  { name:'Festival',  cost:5, type:'Action',   desc:'+2 actions, +1 buy, +2 coins',
+               effect: (g,actor)=>{ if(actor===g.player){ g.actions += 2; g.buys += 1; g.coins += 2; addLog('You played Festival: +2 actions, +1 buy, +2 coins.'); } else { g.aiActions += 2; g.aiBuys += 1; g.aiCoins += 2; } } },
+  Woodcutter:{ name:'Woodcutter',cost:3, type:'Action',   desc:'+1 buy, +2 coins',
+               effect: (g,actor)=>{ if(actor===g.player){ g.buys += 1; g.coins += 2; addLog('You played Woodcutter: +1 buy, +2 coins.'); } else { g.aiBuys += 1; g.aiCoins += 2; } } },
+  Merchant:  { name:'Merchant',  cost:3, type:'Action',   desc:'Draw 1, +1 Action. The first time you play a Silver this turn, +$1.',
+               effect: (g,actor)=>{ drawCards(actor,1); if(actor===g.player){ g.actions += 1; g.merchantPending.player++; addLog('You played Merchant: +1 card, +1 action. The first time you play a Silver this turn, +$1.'); } else { g.aiActions += 1; g.merchantPending.ai++; } } },
+  Workshop:  { name:'Workshop',  cost:3, type:'Action',   desc:'Gain a card costing up to 4 to your discard',
+               effect: (g,actor)=>{ if(actor===g.player){ openGainChoice(4, g.player, 'Workshop'); } else { const pick = aiGainChoiceUpTo(4); if(pick){ const pile=getPile(pick); if(pile&&pile.count>0){ pile.count--; g.ai.discard.push(instance(pick)); } } } } },
+};
 
-
-
+const SUPPLY = [
+  { key:'Copper',   count:60 },
+  { key:'Silver',   count:40 },
+  { key:'Gold',     count:30 },
+  { key:'Estate',   count:24 },
+  { key:'Duchy',    count:12 },
+  { key:'Province', count:12 },
+  { key:'Smithy',   count:10 },
+  { key:'Village',  count:10 },
+  { key:'Market',   count:10 },
+  { key:'Laboratory',count:10 },
+  { key:'Festival', count:10 },
+  { key:'Woodcutter',count:10 },
+  { key:'Merchant', count:10 },
+  { key:'Workshop', count:10 },
+];
 
 
 
@@ -109,18 +149,6 @@ function sanityCheck(){ try{ LOG_SILENT = true; const supplyPiles = document.que
 
 // ------------------- Start -------------------
 init();
-
-
-
-// ------------------- Log & Tooltip -------------------
-LOG_MAX =  10; LOG_SILENT = false; logs =  [];
-function addLog(msg, cls){ if(LOG_SILENT) return; logs.push({msg, cls}); while(logs.length>LOG_MAX) logs.shift(); const el = document.getElementById('log'); if(el) el.innerHTML = logs.map(l=>`<span class="${l.cls||''}">• ${l.msg}</span>`).join('\n'); }
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
-
-const tip = document.getElementById('tooltip');
-function showTip(html, x, y){ tip.innerHTML = html; tip.style.display='block'; const pad=10; const w=260; const h= tip.offsetHeight||100; let left = Math.min(window.innerWidth - w - pad, x + 14); let top  = Math.min(window.innerHeight - h - pad, y + 14); tip.style.left = left + 'px'; tip.style.top = top + 'px'; }
-function hideTip(){ tip.style.display='none'; }
-function cardTip(def){ const meta = []; if(def.type==='Treasure') meta.push(`+${def.value} coins`); if(def.type==='Victory') meta.push(`${def.points} VP`); if(def.type==='Action') meta.push(def.desc||'Action'); return `<div class="tTitle">${def.name}</div><div class="tMeta">Type: ${def.type} · Cost: ${def.cost}</div><div style=\"margin-top:4px\">${meta.join(' · ')}</div>`; }
 
 
 
@@ -259,3 +287,10 @@ if(typeof init==='function'){
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}
   else{init();}
 }
+
+
+// v9.3.17: override tooltip handlers; poc-ui.js owns real behavior
+try {
+  window.showTip = function(){ /* handled by poc-ui.js */ };
+  window.hideTip = function(){ var el = document.getElementById('tooltip'); if(el) el.style.display='none'; };
+} catch(e){}

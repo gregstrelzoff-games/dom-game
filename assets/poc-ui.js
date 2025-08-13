@@ -1,4 +1,4 @@
-// v9.3.15: restore robust hover tooltips + empty pile overlay + default AI debug ON
+// v9.3.17: robust tooltip + empty pile watcher + default AI debug ON
 (function(){
   function $(id){ return document.getElementById(id); }
   function tipEl(){
