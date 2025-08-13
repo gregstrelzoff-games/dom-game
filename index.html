@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dominion POC — Player vs AI (v9.3.4)</title>
-  <link rel="stylesheet" href="styles/base.css?v=v9.3.4"/>
+  <title>Dominion POC — Player vs AI (v9.3.6)</title>
+  <link rel="stylesheet" href="styles/base.css?v=v9.3.6"/>
   <link rel="icon" href="G.png" />
 </head>
 <body>
@@ -83,6 +83,7 @@
     </div>
   </div>
 
+  <!-- Chat -->
   <div class="chat-panel" id="chatPanel">
     <div class="chat-head"><span class="title">Table Talk</span><div class="tools"><button class="btn" id="clearChat" title="Clear chat" style="width:auto">🧹</button></div></div>
     <div class="chat-body" id="chatBody"></div>
@@ -100,6 +101,7 @@
     </div>
   </div>
 
+  <!-- Choice overlay -->
   <div class="overlay" id="choiceOverlay">
     <div class="modal" id="choiceModal">
       <h3 id="choiceTitle">Gain a card</h3>
@@ -108,6 +110,7 @@
     </div>
   </div>
 
+  <!-- Guided tour overlay -->
   <div class="overlay coach" id="coach" style="background:rgba(2,6,23,.45)">
     <div class="modal step" id="coachStep" style="left:40px;top:40px;min-width:300px">
       <div class="title" id="coachTitle" style="font-weight:800;margin-bottom:4px;color:#fff">Welcome!</div>
@@ -121,8 +124,8 @@
 
   <div class="tooltip" id="tooltip"></div>
 
-  <script defer src="assets/poc-game.js?v=v9.3.4"></script>
-  <script defer src="assets/poc-ui.js?v=v9.3.4"></script>
-  <script defer src="assets/main.js?v=v9.3.4"></script>
+  <script defer src="assets/poc-game.js?v=v9.3.6"></script>
+  <script defer src="assets/poc-ui.js?v=v9.3.6"></script>
+  <script defer src="assets/main.js?v=v9.3.6"></script>
 </body>
 </html>

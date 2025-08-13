@@ -1,4 +1,3 @@
-
 // ------------------- Card Definitions -------------------
 const CARD_DEFS = {
   Copper:    { name:'Copper',    cost:0, type:'Treasure', value:1, desc:'+1 coin' },
