@@ -1,5 +1,5 @@
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.8', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3.9', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -224,9 +224,20 @@ function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinne
 
 
 
-(function ensureBuildBadge(){
-  try{const el=document.getElementById('build');if(el&&typeof BUILD!=='undefined'){const d=BUILD.date||new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});el.textContent=`Build ${BUILD.num} • ${d}`;}}catch(e){}
-})();
+document.addEventListener('DOMContentLoaded', ()=>{
+  try {
+    let el = document.getElementById('build');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'build';
+      el.className = 'build';
+      document.body.appendChild(el);
+    }
+    const date = (typeof BUILD!=='undefined' && BUILD.date) ? BUILD.date : new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
+    const num  = (typeof BUILD!=='undefined' && BUILD.num)  ? BUILD.num  : 'v?';
+    el.textContent = `Build ${num} • ${date}`;
+  } catch(e) { /* no-op */ }
+});
 
 
 
@@ -247,4 +258,7 @@ return{init,ensureInit,restart,maybeStart:()=>{}};})();
 
 
 
-if(typeof init==='function'){if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}else{init();}}
+if(typeof init==='function'){
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}
+  else{init();}
+}
