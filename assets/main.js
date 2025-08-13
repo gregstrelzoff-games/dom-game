@@ -1,11 +1,12 @@
 // --- Early globals to avoid TDZ ---
 var LOG_SILENT = false;
-var logs = []; // log buffer until UI wires
+var logs = [];              // buffer until UI hooks in
+var LOG_MAX = 200;          // cap log lines for trimming
 
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.12', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3.13', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -112,7 +113,7 @@ init();
 
 
 // ------------------- Log & Tooltip -------------------
-const LOG_MAX = 10; LOG_SILENT =false; logs = [];
+LOG_MAX = 10; LOG_SILENT =false; logs = [];
 function addLog(msg, cls){ if(LOG_SILENT) return; logs.push({msg, cls}); while(logs.length>LOG_MAX) logs.shift(); const el = document.getElementById('log'); if(el) el.innerHTML = logs.map(l=>`<span class="${l.cls||''}">• ${l.msg}</span>`).join('\n'); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
 
