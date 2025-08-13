@@ -124,8 +124,38 @@
 
   <div class="tooltip" id="tooltip"></div>
 
+  <!-- Scripts: keep only the known six-file footprint -->
   <script defer src="assets/poc-game.js?v=v9.3.9"></script>
   <script defer src="assets/poc-ui.js?v=v9.3.9"></script>
   <script defer src="assets/main.js?v=v9.3.9"></script>
+
+  <!-- Patch: make addLog tolerant to early calls that hit TDZ for LOG_SILENT -->
+  <script defer>
+  (function(){
+    const wrap = function(){
+      if (typeof window.addLog !== 'function') return;
+      const original = window.addLog;
+      window.addLog = function(){
+        try {
+          return original.apply(this, arguments);
+        } catch (e) {
+          // Swallow the one-time TDZ error if LOG_SILENT isn't initialized yet
+          const msg = String(e||'');
+          if (msg.includes('before initialization') && msg.includes('LOG_SILENT')) {
+            // Retry once on next tick (after the rest of main.js has initialized)
+            setTimeout(()=>{ try { original.apply(this, arguments); } catch(_){} }, 0);
+            return;
+          }
+          throw e;
+        }
+      };
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', wrap, { once: true });
+    } else {
+      wrap();
+    }
+  })();
+  </script>
 </body>
 </html>
