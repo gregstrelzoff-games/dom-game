@@ -129,6 +129,24 @@
     .chat-input{display:flex;gap:6px;padding:10px;border-top:1px solid var(--outline);background:#F8FAFF}
     .chat-input input{flex:1;background:#FFFFFF;color:var(--text);border:1px solid var(--outline);border-radius:10px;padding:8px}
     .chat-input button{background:var(--accent);color:#fff;border:1px solid var(--accent-strong);border-radius:10px;padding:8px 10px;cursor:pointer}
-/* v9.3.14: normalize all cards/piles to #E5E7EB */
+/* v9.3.15 UI tweaks */
 .card, .card.treasure, .card.action, .card.victory, .pile, .supply .pile .card { background:#E5E7EB !important; }
-.score-label{ color:#000; font-weight:600; }
+.score-label { color:#000; font-weight:600; }
+.you-label, .ai-label { color:#84CC16; font-weight:700; }
+
+/* 'EMPTY' overlay for exhausted piles */
+.pile.empty, .pile[data-empty="1"], .pile[data-count="0"] {
+  position: relative;
+  opacity: .85;
+  filter: grayscale(0.2) contrast(0.95);
+}
+.pile.empty::after, .pile[data-empty="1"]::after, .pile[data-count="0"]::after {
+  content: "EMPTY";
+  position: absolute; inset: 0;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; letter-spacing:2px;
+  color:#111827;
+  background: repeating-linear-gradient(45deg, rgba(0,0,0,.08) 0, rgba(0,0,0,.08) 8px, transparent 8px, transparent 16px);
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+  mix-blend-mode: multiply;
+}
