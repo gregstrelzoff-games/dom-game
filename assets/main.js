@@ -1,5 +1,11 @@
+var LOG_SILENT = false;
+// --- Early globals to avoid TDZ ---
+LOG_SILENT = false;
+
+
+
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.9', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3.11', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -29,6 +35,13 @@ const Sound = {
 };
 Sound.load();
 ['pointerdown','keydown'].forEach(ev=> document.addEventListener(ev, ()=>Sound.resume(), {once:true}));
+
+
+
+// ------------------- Card Definitions -------------------
+
+
+
 
 
 
@@ -99,7 +112,7 @@ init();
 
 
 // ------------------- Log & Tooltip -------------------
-const LOG_MAX = 10; let LOG_SILENT=false; const logs = [];
+const LOG_MAX = 10; LOG_SILENT =false; const logs = [];
 function addLog(msg, cls){ if(LOG_SILENT) return; logs.push({msg, cls}); while(logs.length>LOG_MAX) logs.shift(); const el = document.getElementById('log'); if(el) el.innerHTML = logs.map(l=>`<span class="${l.cls||''}">• ${l.msg}</span>`).join('\n'); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
 
@@ -227,16 +240,11 @@ function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinne
 document.addEventListener('DOMContentLoaded', ()=>{
   try {
     let el = document.getElementById('build');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'build';
-      el.className = 'build';
-      document.body.appendChild(el);
-    }
+    if (!el) { el = document.createElement('div'); el.id = 'build'; el.className = 'build'; document.body.appendChild(el); }
     const date = (typeof BUILD!=='undefined' && BUILD.date) ? BUILD.date : new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
     const num  = (typeof BUILD!=='undefined' && BUILD.num)  ? BUILD.num  : 'v?';
     el.textContent = `Build ${num} • ${date}`;
-  } catch(e) { /* no-op */ }
+  } catch(e) {}
 });
 
 
