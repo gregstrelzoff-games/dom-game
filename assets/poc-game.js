@@ -1,5 +1,3 @@
-/* build: v9.3.27 | file: assets/poc-game.js | date: 2025-08-14 */
-
 // ------------------- Card Definitions -------------------
 const CARD_DEFS = {
   Copper:    { name:'Copper',    cost:0, type:'Treasure', value:1, desc:'+1 coin' },
@@ -78,8 +76,8 @@ function vpOfPile(pile){ return pile.reduce((sum,c)=> sum + (c.points||0), 0); }
 function computeScores(){ const p = vpOfPile([...game.player.deck,...game.player.discard,...game.player.hand]); const a = vpOfPile([...game.ai.deck,...game.ai.discard,...game.ai.hand]); return {p,a}; }
 function cardIcon(name){ switch(name){ case 'Copper': return '🟠'; case 'Silver': return '⚪️'; case 'Gold': return '🟡'; case 'Estate': return '🏠'; case 'Duchy': return '🏯'; case 'Province': return '🏰'; case 'Smithy': return '⚒️'; case 'Village': return '🏘️'; case 'Market': return '🛒'; case 'Laboratory': return '🧪'; case 'Festival': return '🎪'; case 'Woodcutter': return '🪓'; case 'Merchant': return '🏬'; case 'Workshop': return '🧰'; default: return '🃏'; } }
 
-function isChoiceOpen(){ var el=document.getElementById('choiceOverlay'); return !!(el && el.classList && el.classList.contains('show')); }
-function closeChoiceOverlay(){ var over=document.getElementById('choiceOverlay'); if(over && over.classList) over.classList.remove('show'); game.interactionLock=false; }
+function isChoiceOpen(){ return document.getElementById('choiceOverlay').classList.contains('show'); }
+function closeChoiceOverlay(){ const over=document.getElementById('choiceOverlay'); over.classList.remove('show'); game.interactionLock=false; }
 function syncLockFromOverlay(){ game.interactionLock = isChoiceOpen(); }
 function hasPlayableAction(){ return !game.interactionLock && game.actions>0 && game.player.hand.some(c=>c.type==='Action'); }
 function hasTreasure(){ return !game.interactionLock && game.player.hand.some(c=>c.type==='Treasure'); }
@@ -129,4 +127,3 @@ function aiChooseBuyStrong(debug){ const coins = game.aiCoins; const phase = pha
 function aiChooseBuyWeak(debug){ const coins = game.aiCoins; const provLeft = getPile('Province')?.count ?? 12; let pick=null; if(coins>=6) pick='Gold'; else if(coins>=5) pick=['Festival','Market','Laboratory'][Math.floor(Math.random()*3)]; else if(coins>=4) pick='Smithy'; else if(coins>=3) pick=['Silver','Merchant','Village','Workshop','Woodcutter'][Math.floor(Math.random()*5)]; if(!pick && provLeft<=3){ if(coins>=8) pick='Province'; else if(coins>=5) pick='Duchy'; else if(coins>=2) pick='Estate'; } if(!pick && coins===0 && Math.random()<0.3 && getPile('Copper').count>0) pick='Copper'; if(debug) debug.push(`[Weak] Buy choice: ${pick??'nothing'} (coins ${coins})`); return pick; }
 function aiMultiBuy(debug, mode){ let boughtList=[]; let safety=5; while(game.aiBuys>0 && safety-->0){ const choice = (mode==='weak') ? aiChooseBuyWeak(debug) : aiChooseBuyStrong(debug); if(!choice) break; const pile = getPile(choice); const def = CARD_DEFS[choice]; if(!pile || pile.count<=0 || game.aiCoins < def.cost) break; pile.count--; game.ai.discard.push(instance(choice)); game.aiCoins -= def.cost; game.aiBuys -= 1; boughtList.push(choice); checkEndgameFlags(); } return boughtList; }
 function aiTurn(){ if(game.gameOver) return; const debug = game.debugAI ? [`AI turn start - hand: ${groupByName(game.ai.hand)}`] : null; game.aiActions=1; game.aiBuys=1; game.aiCoins=0; game.merchantPending.ai = 0; const mode = game.aiMode; if(mode==='weak'){ aiPlayBestActionWeak(debug); } else { let playedSomething=true; let guard=10; while(playedSomething && guard-->0){ playedSomething = aiPlayBestActionStrong(debug); } } const gained = aiAutoPlayTreasures(debug); const boughtList = aiMultiBuy(debug, mode); const bought = boughtList.length? boughtList.join(', '): 'nothing'; document.getElementById('ai-status').textContent = `AI (${mode}) played ${gained} coin${gained===1?'':'s'} and bought ${bought}.`; if(game.debugAI){ if(boughtList.length){ debug.push(`Bought: ${boughtList.join(', ')}`); } debug.push(`End coins: ${game.aiCoins}, End buys: ${game.aiBuys}`); writeAIDebug(debug); } else { writeAIDebug([]); } cleanupAndDraw(game.ai); if(endIfNeeded()) return; game.turn='player'; game.merchantPending.player = 0; game.turnNum += 1; addLog(`Your turn [${game.turnNum}].`); Chat.say?.('aiTurn', {bought:boughtList, coins:gained}); render(); }
-
