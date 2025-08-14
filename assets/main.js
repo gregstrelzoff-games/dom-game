@@ -1,8 +1,26 @@
-/* build: v9.3.21 | file: assets/main.js | date: 2025-08-14 */
+/* build: v9.3.22 | file: assets/main.js | date: 2025-08-14 */
+
+// v9.3.22: safe logger with clamp
+function addLog(msg){
+  if (typeof LOG_SILENT !== 'undefined' && LOG_SILENT) return;
+  try {
+    msg = String(msg);
+  } catch(e) { msg = '[object]'; }
+  if (typeof logs === 'undefined' || !Array.isArray(logs)) { try { logs = []; } catch(e) {} }
+  logs.push(msg);
+  if (typeof LOG_MAX === 'number' && logs.length > LOG_MAX) logs = logs.slice(-LOG_MAX);
+  var el = document.getElementById('log');
+  if (el) el.textContent = logs.join('\n');
+}
+function clearLog(){
+  try { logs = []; } catch(e){}
+  var el = document.getElementById('log');
+  if (el) el.textContent = '';
+}
 // --- Early globals to avoid TDZ ---
-var LOG_SILENT = false;
-var logs = [];
-var LOG_MAX = 10;
+LOG_SILENT =  false;
+logs =  [];
+LOG_MAX =  10;
 
 console.log("%cDominion POC %cv9.3.20%c — index/base.css/poc-game/poc-ui/main all updated",
   "font-weight:bold", "color:#16a34a;font-weight:bold", "color:inherit");
