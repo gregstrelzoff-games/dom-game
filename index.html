@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dominion POC — Player vs AI (v10.0.0)</title>
-  <link rel="stylesheet" href="styles/base.css?v=v10.0.0"/>
+  <title>Dominion POC — Player vs AI (v10.0.6)</title>
+  <link rel="stylesheet" href="styles/base.css?v=v10.0.6"/>
   <link rel="icon" href="G.png" />
 </head>
+
 <body>
   <div class="app">
     <div class="topbar">
@@ -42,7 +43,7 @@
       <div class="panel">
         <h2>AI Status & Log</h2>
         <div class="log" id="ai-status">Waiting for your turn…</div>
-        <div class="log mono" id="ai-debug" style="display:none"></div>
+        <div class="log mono" id="ai-debug" style="display:block"></div>
         <div class="log mono" id="log">Action > Treasure > Buy. Once you buy, you can't play more cards this turn.</div>
       </div>
     </div>
@@ -153,5 +154,21 @@ window.addEventListener('load', function(){
 
     <div id="tip" class="tip" style="position:absolute; display:none; pointer-events:none; z-index:9999;"></div>
     
+
+<script>
+// v10.0.5: robust init (html) - ensure AI watch on load as a fallback
+window.addEventListener('load', function(){
+  try{
+    var dbg = document.getElementById('debugAICheck');
+    var panel = document.getElementById('ai-debug');
+    if(dbg && dbg.checked){
+      if(window.game){ window.game.debugAI = true; }
+      if(typeof window.writeAIDebug === 'function'){ window.writeAIDebug([]); }
+      if(panel){ panel.style.display = 'block'; }
+    }
+  }catch(e){}
+});
+</script>
+
 </body>
 </html>

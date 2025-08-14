@@ -6,7 +6,7 @@ var LOG_MAX = 10;           // clamp log lines
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v10.0.4', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v10.0.6', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -32,7 +32,7 @@ const Sound = {
   chirp(f1=300, f2=900, dur=0.15, type='triangle', gain=0.35){ if(!this.ctx || this.muted) return; const t=this.now(); const o=this.ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f1, t); o.frequency.linearRampToValueAtTime(f2, t+dur); this.env(o,t,0.005, dur*0.7, 0.0, 0.12, gain); o.start(t); o.stop(t+dur+0.2); },
   noise(dur=0.15, gain=0.25, band=[300,2000]){ if(!this.ctx || this.muted) return; const t=this.now(); const buf=this.ctx.createBuffer(1, this.ctx.sampleRate*dur, this.ctx.sampleRate); const data=buf.getChannelData(0); for(let i=0;i<data.length;i++){ data[i]=Math.random()*2-1; } const src=this.ctx.createBufferSource(); src.buffer=buf; let node=src; if(band){ const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=(band[0]+band[1])/2; bp.Q.value=3; src.connect(bp); node=bp; } this.env(node,t,0.005, dur*0.5, 0.0, 0.15, gain); src.start(t); src.stop(t+dur+0.2); },
   seq(notes){ if(!this.ctx || this.muted) return; const base=this.now(); notes.forEach(n=>{ const t=base+(n.t||0); const o=this.ctx.createOscillator(); o.type=n.type||'sine'; o.frequency.setValueAtTime(n.f, t); this.env(o,t,0.005,(n.d||0.1)*0.7,0.0,(n.d||0.1)*0.3,n.g||0.4); o.start(t); o.stop(t+(n.d||0.1)+0.2); }); },
-  play(kind){ switch(kind){ case 'draw': this.chirp(320,520,0.08,'triangle',0.25); break; case 'action': this.chirp(420,860,0.12,'triangle',0.35); break; case 'coins': this.seq([{t:0,f:900,d:0.05,g:0.35,type:'square'},{t:0.06,f:1200,d:0.05,g:0.25,type:'square'}]); break; case 'buy': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:990,d:0.1,g:0.25}]); break; case 'shuffle': this.noise(0.25,0.22,[200,3000]); break; case 'attack': this.seq([{t:0,f:220,d:0.14,g:0.4,type:'sawtooth'},{t:0.1,f:180,d:0.12,g:0.35,type:'sawtooth'}]); break; case 'reaction': this.chirp(500,1000,0.16,'sine',0.3); break; case 'error': this.tone(140,0.18,'sawtooth',0.35); break; case 'end': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:880,d:0.12,g:0.35},{t:0.26,f:1320,d:0.16,g:0.25}]); break; } }
+  play(kind){ switch(kind){ case 'gain': this.tone(880,0.10,'sine',0.35); this.tone(1320,0.08,'triangle',0.25); break; case 'draw': this.chirp(320,520,0.08,'triangle',0.25); break; case 'action': this.chirp(420,860,0.12,'triangle',0.35); break; case 'coins': this.seq([{t:0,f:900,d:0.05,g:0.35,type:'square'},{t:0.06,f:1200,d:0.05,g:0.25,type:'square'}]); break; case 'buy': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:990,d:0.1,g:0.25}]); break; case 'shuffle': this.noise(0.25,0.22,[200,3000]); break; case 'attack': this.seq([{t:0,f:220,d:0.14,g:0.4,type:'sawtooth'},{t:0.1,f:180,d:0.12,g:0.35,type:'sawtooth'}]); break; case 'reaction': this.chirp(500,1000,0.16,'sine',0.3); break; case 'error': this.tone(140,0.18,'sawtooth',0.35); break; case 'end': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:880,d:0.12,g:0.35},{t:0.26,f:1320,d:0.16,g:0.25}]); break; } }
 };
 Sound.load();
 ['pointerdown','keydown'].forEach(ev=> document.addEventListener(ev, ()=>Sound.resume(), {once:true}));
@@ -64,7 +64,23 @@ function init(){
   document.getElementById('autoAdvance').checked=game.autoAdvance;
   document.getElementById('autoAdvance').onchange=(e)=>{ game.autoAdvance=e.target.checked; };
   const sel=document.getElementById('aiMode'); sel.value=game.aiMode; sel.onchange=(e)=>{ game.aiMode=e.target.value; toast(`AI set to ${game.aiMode}`); };
-  const dbg=document.getElementById('debugAICheck'); dbg.checked=game.debugAI; dbg.onchange=(e)=>{ game.debugAI=e.target.checked; writeAIDebug([]); };
+  const dbg=document.getElementById('debugAICheck'); dbg.checked = true; game.debugAI = true; dbg.onchange=(e)=>{ game.debugAI=e.target.checked; writeAIDebug([]); };
+
+// v10.0.5: robust init to ensure AI watch is active if checkbox is pre-checked
+(function(){
+  try{
+    const dbg = document.getElementById('debugAICheck');
+    const aiPanel = document.getElementById('ai-debug');
+    if(dbg){
+      if(dbg.checked){
+        // mirror onchange behavior
+        if(typeof writeAIDebug === 'function'){ writeAIDebug([]); }
+        if(typeof game !== 'undefined'){ game.debugAI = true; }
+        if(aiPanel){ aiPanel.style.display = 'block'; }
+      }
+    }
+  }catch(e){ /* no-op */ }
+})();
 // v10.0.4: initialize AI watch state on load
 if (dbg.checked) { game.debugAI = true; writeAIDebug([]); document.getElementById('ai-debug').style.display='block'; }
 
