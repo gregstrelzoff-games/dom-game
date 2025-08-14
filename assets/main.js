@@ -6,7 +6,7 @@ var LOG_MAX = 10;           // clamp log lines
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v10.0.0', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v10.0.4', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -65,6 +65,8 @@ function init(){
   document.getElementById('autoAdvance').onchange=(e)=>{ game.autoAdvance=e.target.checked; };
   const sel=document.getElementById('aiMode'); sel.value=game.aiMode; sel.onchange=(e)=>{ game.aiMode=e.target.value; toast(`AI set to ${game.aiMode}`); };
   const dbg=document.getElementById('debugAICheck'); dbg.checked=game.debugAI; dbg.onchange=(e)=>{ game.debugAI=e.target.checked; writeAIDebug([]); };
+// v10.0.4: initialize AI watch state on load
+if (dbg.checked) { game.debugAI = true; writeAIDebug([]); document.getElementById('ai-debug').style.display='block'; }
 
   // Top-right controls
   document.getElementById('newGameBtn').onclick = ()=> location.reload();
@@ -92,7 +94,8 @@ function init(){
 // ------------------- Keyboard Shortcuts -------------------
 function firstPlayableActionIndex(){ if(game.turn!=='player' || game.phase!=='action' || game.actions<=0 || game.interactionLock) return -1; return game.player.hand.findIndex(c=>c.type==='Action'); }
 
-document.addEventListener('keydown', (ev)=>{ const k = ev.key.toLowerCase(); if(k==='a'){ const idx = firstPlayableActionIndex(); if(idx>=0){ play(idx); ev.preventDefault(); } else { Sound.play('error'); } } else if(k==='t'){ if(game.interactionLock) return; if(game.phase==='action') game.phase='treasure'; snapshot(); autoPlayTreasures(); ev.preventDefault(); } else if(k==='b'){ if(game.interactionLock) return; if(game.phase!=='buy'){ snapshot(); game.phase='buy'; addLog('Buy phase. Buying disables further card play this turn.'); render(); } ev.preventDefault(); } else if(k==='e'){ if(game.interactionLock) return; Sound.play('end'); endTurn(); ev.preventDefault(); } else if(k==='z'){ undo(); ev.preventDefault(); } });
+/* v10.0.3: removed orphaned keydown handler body */
+
 
 
 
@@ -145,7 +148,7 @@ function openGainChoice(maxCost, actor, source){
       <div class=\"meta\">Cost: ${def.cost}</div>
     `;
     el.onclick = ()=>{
-      pile.count--; actor.discard.push(instance(def.name));
+      Sound.play('gain'); pile.count--; actor.discard.push(instance(def.name));
       addLog(`You gained ${def.name} with ${source}.`);
       over.classList.remove('show');
       game.interactionLock = false; updateUndoUI(); checkEndgameFlags(); render();
@@ -162,6 +165,7 @@ function openGainChoice(maxCost, actor, source){
 
 // ------------------- Rendering -------------------
 function render(){
+  bindCardHover();
   syncLockFromOverlay();
   document.getElementById('actions').textContent = game.actions;
   document.getElementById('buys').textContent    = game.buys;
@@ -291,4 +295,30 @@ return{init,ensureInit,restart,maybeStart:()=>{}};})();
 if(typeof init==='function'){
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}
   else{init();}
+}
+
+function bindCardHover(){
+  try{
+    const tip = document.getElementById('tip');
+    if(!tip || typeof showTip !== 'function' || typeof hideTip !== 'function') return;
+    document.body.addEventListener('mousemove', (e)=>{
+      if(tip.style.display==='block'){
+        tip.style.left = (e.pageX + 12) + 'px';
+        tip.style.top  = (e.pageY + 12) + 'px';
+      }
+    });
+    document.querySelectorAll('.card').forEach(el=>{
+      if(el.dataset.hoverBound) return;
+      el.addEventListener('mouseenter', (ev)=>{
+        const key = el.getAttribute('data-key') || el.getAttribute('data-card') || el.id || '';
+        const def = (typeof CARD_DEFS!=='undefined') && (CARD_DEFS[key] || CARD_DEFS[(key||'').replace(/-pile$/,'')]);
+        if(def){
+          const html = cardTip(def);
+          showTip(html, ev.pageX+12, ev.pageY+12);
+        }
+      });
+      el.addEventListener('mouseleave', ()=> hideTip());
+      el.dataset.hoverBound = '1';
+    });
+  }catch(_e){ /* no-op */ }
 }

@@ -131,3 +131,33 @@
     .chat-input button{background:var(--accent);color:#fff;border:1px solid var(--accent-strong);border-radius:10px;padding:8px 10px;cursor:pointer}
 .card, .card.treasure, .card.action, .card.victory, .pile:not(.empty), .supply .pile .card { background:#E5E7EB !important; }
 .score-label{ color:#000; font-weight:600; }
+
+/* v10.0.2: Use End Turn blue for player labels */
+.player .name.you, .player.you .name, .name.you,
+.player .name.ai, .player.ai .name, .name.ai {
+  color: var(--accent) !important;
+}
+/* Also scoreboard tags if present */
+.score .you, .score .ai, .status .you, .status .ai {
+  color: var(--accent) !important;
+}
+
+/* v10.0.2: brighter blue labels matching End Turn */
+.you-label, .ai-label { color: var(--accent) !important; font-weight: 700; }
+#pScore, #aScore { color: var(--accent) !important; }
+
+
+/* v10.0.3: Score pill restyle */
+.pill.score {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: rgba(0,0,0,0.15) !important;
+}
+.pill.score .score-label,
+.pill.score .you-label,
+.pill.score .ai-label,
+.pill.score strong,
+.pill.score #pScore,
+.pill.score #aScore {
+  color: #fff !important;
+}

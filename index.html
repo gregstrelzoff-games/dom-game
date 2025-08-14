@@ -13,7 +13,7 @@
       <div class="top-left">
         <h1>Dominion — POC (You vs AI)</h1>
         <div class="control-line"><label class="pill toggle"><input type="checkbox" id="autoAdvance"> Auto-advance phases</label></div>
-        <div class="control-line"><label class="pill toggle"><input type="checkbox" id="debugAICheck"> Watch the AI</label></div>
+        <div class="control-line"><label class="pill toggle"><input type="checkbox" id="debugAICheck" checked> Watch the AI</label></div>
         <div class="control-line">
           <label class="pill toggle">AI:
             <select id="aiMode">
@@ -79,7 +79,8 @@
         <button class="btn" id="undoBtn" title="Z" style="width:auto">Undo last</button>
         <button class="btn" id="endTurnBtn" title="E" style="width:auto">End Turn</button>
       </div>
-      <div class="log mono" style="opacity:.85;padding:0 12px 12px">Shortcuts: A=play Action, T=auto-Treasure, B=Buy, E=End Turn, Z=Undo</div>
+      <div class="log mono" style="opacity:.85;padding:0 12px 12px">
+
     </div>
   </div>
 
@@ -128,5 +129,29 @@
   <script src="assets/poc-game.js?v=v10.0.0"></script>
   <script src="assets/poc-ui.js?v=v10.0.0"></script>
   <script src="assets/main.js?v=v10.0.0"></script>
+
+<script>
+window.addEventListener('load', function(){
+  try {
+    var dbg = document.getElementById('debugAICheck');
+    if (dbg) {
+      dbg.checked = true;
+      if (window.game) { window.game.debugAI = true; }
+      if (typeof window.writeAIDebug === 'function') { window.writeAIDebug([]); }
+    }
+    var scoreEl = document.querySelector('.pill.score');
+    if (scoreEl && !scoreEl.dataset.enhancedLabels) {
+      scoreEl.innerHTML = scoreEl.innerHTML
+        .replace(/\bYou\b/i, '<span class="you-label">You</span>')
+        .replace(/\bAI\b/g, '<span class="ai-label">AI</span>');
+      scoreEl.dataset.enhancedLabels = '1';
+    }
+  } catch(e){ /* no-op */ }
+});
+</script>
+
+
+    <div id="tip" class="tip" style="position:absolute; display:none; pointer-events:none; z-index:9999;"></div>
+    
 </body>
 </html>
