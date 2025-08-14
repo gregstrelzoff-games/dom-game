@@ -129,6 +129,5 @@
     .chat-input{display:flex;gap:6px;padding:10px;border-top:1px solid var(--outline);background:#F8FAFF}
     .chat-input input{flex:1;background:#FFFFFF;color:var(--text);border:1px solid var(--outline);border-radius:10px;padding:8px}
     .chat-input button{background:var(--accent);color:#fff;border:1px solid var(--accent-strong);border-radius:10px;padding:8px 10px;cursor:pointer}
-/* v10.0.0: normalize all cards/piles to #E5E7EB */
-.card, .card.treasure, .card.action, .card.victory, .pile, .supply .pile .card { background:#E5E7EB !important; }
+.card, .card.treasure, .card.action, .card.victory, .pile:not(.empty), .supply .pile .card { background:#E5E7EB !important; }
 .score-label{ color:#000; font-weight:600; }
