@@ -1,31 +1,10 @@
-/* build: v9.3.22 | file: assets/main.js | date: 2025-08-14 */
-
-// v9.3.22: safe logger with clamp
-function addLog(msg){
-  if (typeof LOG_SILENT !== 'undefined' && LOG_SILENT) return;
-  try {
-    msg = String(msg);
-  } catch(e) { msg = '[object]'; }
-  if (typeof logs === 'undefined' || !Array.isArray(logs)) { try { logs = []; } catch(e) {} }
-  logs.push(msg);
-  if (typeof LOG_MAX === 'number' && logs.length > LOG_MAX) logs = logs.slice(-LOG_MAX);
-  var el = document.getElementById('log');
-  if (el) el.textContent = logs.join('\n');
-}
-function clearLog(){
-  try { logs = []; } catch(e){}
-  var el = document.getElementById('log');
-  if (el) el.textContent = '';
-}
+/* build: v9.3.23 | file: assets/main.js | date: 2025-08-14 */
 // --- Early globals to avoid TDZ ---
-LOG_SILENT =  false;
-logs =  [];
-LOG_MAX =  10;
-
-console.log("%cDominion POC %cv9.3.20%c — index/base.css/poc-game/poc-ui/main all updated",
-  "font-weight:bold", "color:#16a34a;font-weight:bold", "color:inherit");
-
-// v9.3.20: ensure #build element always exists to avoid null.textContent
+var LOG_SILENT=false;
+var logs=[];
+var LOG_MAX=10;
+console.log("%cDominion POC %cv9.3.23%c — index/base.css/poc-game/poc-ui/main all updated","font-weight:bold","color:#16a34a;font-weight:bold","color:inherit");
+// ensure #build element always exists
 (function(){
   var _origGet = document.getElementById.bind(document);
   document.getElementById = function(id){
@@ -42,10 +21,19 @@ console.log("%cDominion POC %cv9.3.20%c — index/base.css/poc-game/poc-ui/main 
     return _origGet(id);
   };
 })();
-
+// Safe logger
+function addLog(msg){
+  if (typeof LOG_SILENT !== 'undefined' && LOG_SILENT) return;
+  try { msg = String(msg); } catch(e){ msg = '[object]'; }
+  if (!Array.isArray(logs)) { try { logs = []; } catch(e){} }
+  logs.push(msg);
+  if (typeof LOG_MAX === 'number' && logs.length > LOG_MAX) logs = logs.slice(-LOG_MAX);
+  var el = document.getElementById('log'); if (el) el.textContent = logs.join('\n');
+}
+function clearLog(){ try{ logs = []; }catch(e){} var el = document.getElementById('log'); if(el) el.textContent=''; }
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.20', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+BUILD =  { num: 'v9.3.23', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -79,6 +67,48 @@ Sound.load();
 
 
 // ------------------- Card Definitions -------------------
+CARD_DEFS =  {
+  Copper:    { name:'Copper',    cost:0, type:'Treasure', value:1, desc:'+1 coin' },
+  Silver:    { name:'Silver',    cost:3, type:'Treasure', value:2, desc:'+2 coins' },
+  Gold:      { name:'Gold',      cost:6, type:'Treasure', value:3, desc:'+3 coins' },
+  Estate:    { name:'Estate',    cost:2, type:'Victory',  points:1, desc:'Worth 1 VP at end of game' },
+  Duchy:     { name:'Duchy',     cost:5, type:'Victory',  points:3, desc:'Worth 3 VP at end of game' },
+  Province:  { name:'Province',  cost:8, type:'Victory',  points:6, desc:'Worth 6 VP at end of game' },
+  Smithy:    { name:'Smithy',    cost:4, type:'Action',   desc:'+3 cards',
+               effect: (g,actor)=>{ drawCards(actor,3); if(actor===g.player) addLog(`You played Smithy and drew 3 cards.`); } },
+  Village:   { name:'Village',   cost:3, type:'Action',   desc:'+1 card, +2 actions',
+               effect: (g,actor)=>{ drawCards(actor,1); if(actor===g.player){ g.actions += 2; addLog(`You played Village: +1 card, +2 actions.`);} else { g.aiActions += 2; } } },
+  Market:    { name:'Market',    cost:5, type:'Action',   desc:'+1 card, +1 action, +1 buy, +1 coin',
+               effect: (g,actor)=>{ drawCards(actor,1); if(actor===g.player){ g.actions += 1; g.buys += 1; g.coins += 1; addLog('You played Market: +1 card, +1 action, +1 buy, +1 coin.'); } else { g.aiActions += 1; g.aiBuys += 1; g.aiCoins += 1; } } },
+  Laboratory:{ name:'Laboratory',cost:5, type:'Action',   desc:'+2 cards, +1 action',
+               effect: (g,actor)=>{ drawCards(actor,2); if(actor===g.player){ g.actions += 1; addLog('You played Laboratory: +2 cards, +1 action.'); } else { g.aiActions += 1; } } },
+  Festival:  { name:'Festival',  cost:5, type:'Action',   desc:'+2 actions, +1 buy, +2 coins',
+               effect: (g,actor)=>{ if(actor===g.player){ g.actions += 2; g.buys += 1; g.coins += 2; addLog('You played Festival: +2 actions, +1 buy, +2 coins.'); } else { g.aiActions += 2; g.aiBuys += 1; g.aiCoins += 2; } } },
+  Woodcutter:{ name:'Woodcutter',cost:3, type:'Action',   desc:'+1 buy, +2 coins',
+               effect: (g,actor)=>{ if(actor===g.player){ g.buys += 1; g.coins += 2; addLog('You played Woodcutter: +1 buy, +2 coins.'); } else { g.aiBuys += 1; g.aiCoins += 2; } } },
+  Merchant:  { name:'Merchant',  cost:3, type:'Action',   desc:'Draw 1, +1 Action. The first time you play a Silver this turn, +$1.',
+               effect: (g,actor)=>{ drawCards(actor,1); if(actor===g.player){ g.actions += 1; g.merchantPending.player++; addLog('You played Merchant: +1 card, +1 action. The first time you play a Silver this turn, +$1.'); } else { g.aiActions += 1; g.merchantPending.ai++; } } },
+  Workshop:  { name:'Workshop',  cost:3, type:'Action',   desc:'Gain a card costing up to 4 to your discard',
+               effect: (g,actor)=>{ if(actor===g.player){ openGainChoice(4, g.player, 'Workshop'); } else { const pick = aiGainChoiceUpTo(4); if(pick){ const pile=getPile(pick); if(pile&&pile.count>0){ pile.count--; g.ai.discard.push(instance(pick)); } } } } },
+};
+
+SUPPLY =  [
+  { key:'Copper',   count:60 },
+  { key:'Silver',   count:40 },
+  { key:'Gold',     count:30 },
+  { key:'Estate',   count:24 },
+  { key:'Duchy',    count:12 },
+  { key:'Province', count:12 },
+  { key:'Smithy',   count:10 },
+  { key:'Village',  count:10 },
+  { key:'Market',   count:10 },
+  { key:'Laboratory',count:10 },
+  { key:'Festival', count:10 },
+  { key:'Woodcutter',count:10 },
+  { key:'Merchant', count:10 },
+  { key:'Workshop', count:10 },
+];
+
 
 
 // ------------------- Undo -------------------
@@ -262,19 +292,12 @@ function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinne
 
 // Clamp #log to last LOG_MAX lines
 (function(){
-  function clamp(){ var el = document.getElementById('log'); if(!el) return;
-    var lines = (el.textContent||'').split(/\r?\n/);
-    if (lines.length > LOG_MAX) el.textContent = lines.slice(-LOG_MAX).join('\n');
-  }
-  function install(){ var el = document.getElementById('log'); if(!el) return;
-    var mo = new MutationObserver(clamp);
-    mo.observe(el, {childList:true, subtree:true, characterData:true});
-    clamp();
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install, {once:true});
-  else install();
+  function clamp(){ var el=document.getElementById('log'); if(!el) return;
+    var lines=(el.textContent||'').split(/\r?\n/); if(lines.length>LOG_MAX) el.textContent=lines.slice(-LOG_MAX).join('\n'); }
+  function install(){ var el=document.getElementById('log'); if(!el) return;
+    var mo=new MutationObserver(clamp); mo.observe(el,{childList:true,subtree:true,characterData:true}); clamp(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install, {once:true}); else install();
 })();
-
 
 if(typeof init==='function'){
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}
