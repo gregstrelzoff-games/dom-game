@@ -1,15 +1,33 @@
-/* build: v9.3.19 | file: assets/main.js | date: 2025-08-14 */
+/* build: v9.3.20 | file: assets/main.js | date: 2025-08-14 */
 // --- Early globals to avoid TDZ ---
 var LOG_SILENT = false;
 var logs = [];
 var LOG_MAX = 10;
 
-console.log("%cDominion POC %cv9.3.19%c — index/base.css/poc-game/poc-ui/main all updated",
+console.log("%cDominion POC %cv9.3.20%c — index/base.css/poc-game/poc-ui/main all updated",
   "font-weight:bold", "color:#16a34a;font-weight:bold", "color:inherit");
+
+// v9.3.20: ensure #build element always exists to avoid null.textContent
+(function(){
+  var _origGet = document.getElementById.bind(document);
+  document.getElementById = function(id){
+    if(id === 'build'){
+      var el = _origGet('build');
+      if(!el){
+        el = document.createElement('div');
+        el.id = 'build';
+        el.className = 'build';
+        (document.body || document.documentElement || document.head).appendChild(el);
+      }
+      return el;
+    }
+    return _origGet(id);
+  };
+})();
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.19', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3.20', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available

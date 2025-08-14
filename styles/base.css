@@ -1,4 +1,4 @@
-/* build: v9.3.19 | file: styles/base.css | date: 2025-08-14 */
+/* build: v9.3.20 | file: styles/base.css | date: 2025-08-14 */
 /* Normalize all cards/piles to #E5E7EB and minor UI tweaks */
 .card, .card.treasure, .card.action, .card.victory, .pile, .supply .pile .card { background:#E5E7EB !important; }
 .score-label{ color:#000; font-weight:600; }
