@@ -1,4 +1,4 @@
-/* build: v9.3.25 | file: styles/base.css | date: 2025-08-14 */
+/* build: v9.3.26 | file: styles/base.css | date: 2025-08-14 */
 .card, .card.treasure, .card.action, .card.victory, .pile, .supply .pile .card { background:#E5E7EB !important; }
 .score-label{ color:#000; font-weight:600; }
 .you-label, .ai-label { color:#84CC16; font-weight:700; }

@@ -1,4 +1,4 @@
-/* build: v9.3.25 | file: assets/poc-game.js | date: 2025-08-14 */
+/* build: v9.3.26 | file: assets/poc-game.js | date: 2025-08-14 */
 
 // ------------------- Card Definitions -------------------
 const CARD_DEFS = {
@@ -78,8 +78,8 @@ function vpOfPile(pile){ return pile.reduce((sum,c)=> sum + (c.points||0), 0); }
 function computeScores(){ const p = vpOfPile([...game.player.deck,...game.player.discard,...game.player.hand]); const a = vpOfPile([...game.ai.deck,...game.ai.discard,...game.ai.hand]); return {p,a}; }
 function cardIcon(name){ switch(name){ case 'Copper': return '🟠'; case 'Silver': return '⚪️'; case 'Gold': return '🟡'; case 'Estate': return '🏠'; case 'Duchy': return '🏯'; case 'Province': return '🏰'; case 'Smithy': return '⚒️'; case 'Village': return '🏘️'; case 'Market': return '🛒'; case 'Laboratory': return '🧪'; case 'Festival': return '🎪'; case 'Woodcutter': return '🪓'; case 'Merchant': return '🏬'; case 'Workshop': return '🧰'; default: return '🃏'; } }
 
-function isChoiceOpen(){ return document.getElementById('choiceOverlay').classList.contains('show'); }
-function closeChoiceOverlay(){ const over=document.getElementById('choiceOverlay'); over.classList.remove('show'); game.interactionLock=false; }
+function isChoiceOpen(){ var el=document.getElementById('choiceOverlay'); return !!(el && el.classList && el.classList.contains('show')); }
+function closeChoiceOverlay(){ var over=document.getElementById('choiceOverlay'); if(over && over.classList) over.classList.remove('show'); game.interactionLock=false; }
 function syncLockFromOverlay(){ game.interactionLock = isChoiceOpen(); }
 function hasPlayableAction(){ return !game.interactionLock && game.actions>0 && game.player.hand.some(c=>c.type==='Action'); }
 function hasTreasure(){ return !game.interactionLock && game.player.hand.some(c=>c.type==='Treasure'); }

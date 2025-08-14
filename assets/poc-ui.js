@@ -1,4 +1,4 @@
-/* build: v9.3.25 | file: assets/poc-ui.js | date: 2025-08-14 */
+/* build: v9.3.26 | file: assets/poc-ui.js | date: 2025-08-14 */
 (function(){
   function $(id){ return document.getElementById(id); }
   function tipEl(){ var t=$('tooltip'); if(!t){ t=document.createElement('div'); t.id='tooltip'; document.body.appendChild(t); } t.style.pointerEvents='none'; return t; }
@@ -11,6 +11,7 @@
   function markEmptyPiles(){ var root=$('supply'); if(!root) return; root.querySelectorAll('.pile').forEach(function(p){ var cntEl=p.querySelector('.count, .qty, [data-count], [data-qty]'); var val=null; if(cntEl&&cntEl.getAttribute) val=cntEl.getAttribute('data-count')||cntEl.getAttribute('data-qty'); if(val==null&&cntEl){ var m=(cntEl.textContent||'').match(/\d+/); if(m) val=m[0]; } if(val==null&&p.hasAttribute('data-count')) val=p.getAttribute('data-count'); if(String(val)==='0') p.classList.add('empty'); else p.classList.remove('empty'); }); }
   function installEmptyWatcher(){ var root=$('supply'); if(!root) return; var mo=new MutationObserver(function(){ markEmptyPiles(); }); mo.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['data-count','data-qty']}); markEmptyPiles(); }
   function ensureAIDebugOn(){ var cb=$('debugAICheck'); if(cb) cb.checked=true; var dbg=$('ai-debug'); if(dbg) dbg.style.display='block'; }
-  function install(){ document.addEventListener('mouseover', onOver, true); document.addEventListener('mousemove', onMove, true); document.addEventListener('mouseout', hide, true); installEmptyWatcher(); ensureAIDebugOn(); }
+  function ensureChoiceOverlay(){ var el=document.getElementById('choiceOverlay'); if(!el){ el=document.createElement('div'); el.id='choiceOverlay'; el.className='choice-overlay'; el.hidden=true; document.body.appendChild(el);} return el; }
+  function install(){ ensureChoiceOverlay(); document.addEventListener('mouseover', onOver, true); document.addEventListener('mousemove', onMove, true); document.addEventListener('mouseout', hide, true); installEmptyWatcher(); ensureAIDebugOn(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install, {once:true}); else install();
 })();
