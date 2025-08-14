@@ -1,4 +1,4 @@
-/* build: v9.3.26 | file: assets/poc-game.js | date: 2025-08-14 */
+/* build: v9.3.27 | file: assets/poc-game.js | date: 2025-08-14 */
 
 // ------------------- Card Definitions -------------------
 const CARD_DEFS = {

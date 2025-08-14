@@ -1,7 +1,9 @@
-/* build: v9.3.26 | file: styles/base.css | date: 2025-08-14 */
+/* build: v9.3.27 | file: styles/base.css | date: 2025-08-14 */
 .card, .card.treasure, .card.action, .card.victory, .pile, .supply .pile .card { background:#E5E7EB !important; }
 .score-label{ color:#000; font-weight:600; }
 .you-label, .ai-label { color:#84CC16; font-weight:700; }
+
+/* EMPTY overlay */
 .pile.empty, .pile[data-empty="1"], .pile[data-count="0"] { position: relative; opacity:.85; filter:grayscale(.2) contrast(.95); }
 .pile.empty::after, .pile[data-empty="1"]::after, .pile[data-count="0"]::after {
   content:"EMPTY"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;

@@ -1,17 +1,133 @@
-/* build: v9.3.26 | file: assets/poc-ui.js | date: 2025-08-14 */
-(function(){
-  function $(id){ return document.getElementById(id); }
-  function tipEl(){ var t=$('tooltip'); if(!t){ t=document.createElement('div'); t.id='tooltip'; document.body.appendChild(t); } t.style.pointerEvents='none'; return t; }
-  function cardKeyFrom(el){ if(!el) return null; var key=(el.getAttribute&&(el.getAttribute('data-card')||el.getAttribute('data-key')||el.getAttribute('data-name')))||null; if(!key&&el.dataset) key=el.dataset.card||el.dataset.key||el.dataset.name; if(!key){ var txt=(el.textContent||'').trim(); if(txt) key=txt.split(/\s+/)[0]; } return key||null; }
-  function defFor(key){ try{ return (window.CARD_DEFS&&window.CARD_DEFS[key])||null; }catch(e){ return null; } }
-  function renderTipFor(el,e){ var k=cardKeyFrom(el); if(!k) return hide(); var def=defFor(k)||{}; var t=tipEl(); var name=def.name||k; var text=def.text||def.desc||''; var cost=(def.cost!=null)?('Cost: '+def.cost):''; t.innerHTML='<div style="font-weight:800;margin-bottom:2px">'+name+'</div>'+(text?'<div style="opacity:.9;margin-bottom:2px">'+text+'</div>':'')+(cost?'<div style="opacity:.8">'+cost+'</div>':''); t.style.display='block'; t.style.position='absolute'; t.style.left=(e.pageX+12)+'px'; t.style.top=(e.pageY+12)+'px'; }
-  function hide(){ var t=$('tooltip'); if(t) t.style.display='none'; }
-  function onOver(e){ var el=e.target.closest?e.target.closest('.card,[data-card]'):null; if(!el) return hide(); renderTipFor(el,e); }
-  function onMove(e){ var t=$('tooltip'); if(!t||t.style.display!=='block') return; t.style.left=(e.pageX+12)+'px'; t.style.top=(e.pageY+12)+'px'; }
-  function markEmptyPiles(){ var root=$('supply'); if(!root) return; root.querySelectorAll('.pile').forEach(function(p){ var cntEl=p.querySelector('.count, .qty, [data-count], [data-qty]'); var val=null; if(cntEl&&cntEl.getAttribute) val=cntEl.getAttribute('data-count')||cntEl.getAttribute('data-qty'); if(val==null&&cntEl){ var m=(cntEl.textContent||'').match(/\d+/); if(m) val=m[0]; } if(val==null&&p.hasAttribute('data-count')) val=p.getAttribute('data-count'); if(String(val)==='0') p.classList.add('empty'); else p.classList.remove('empty'); }); }
-  function installEmptyWatcher(){ var root=$('supply'); if(!root) return; var mo=new MutationObserver(function(){ markEmptyPiles(); }); mo.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['data-count','data-qty']}); markEmptyPiles(); }
-  function ensureAIDebugOn(){ var cb=$('debugAICheck'); if(cb) cb.checked=true; var dbg=$('ai-debug'); if(dbg) dbg.style.display='block'; }
-  function ensureChoiceOverlay(){ var el=document.getElementById('choiceOverlay'); if(!el){ el=document.createElement('div'); el.id='choiceOverlay'; el.className='choice-overlay'; el.hidden=true; document.body.appendChild(el);} return el; }
-  function install(){ ensureChoiceOverlay(); document.addEventListener('mouseover', onOver, true); document.addEventListener('mousemove', onMove, true); document.addEventListener('mouseout', hide, true); installEmptyWatcher(); ensureAIDebugOn(); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install, {once:true}); else install();
-})();
+/* build: v9.3.27 | file: assets/poc-ui.js | date: 2025-08-14 */
+function ensureChoiceOverlay(){ var el=document.getElementById('choiceOverlay'); if(!el){ el=document.createElement('div'); el.id='choiceOverlay'; el.className='choice-overlay'; el.hidden=true; document.body.appendChild(el);} return el; }
+document.addEventListener('DOMContentLoaded', ensureChoiceOverlay, {once:true});
+
+// ------------------- Log & Tooltip -------------------
+const LOG_MAX = 10; let LOG_SILENT=false; const logs = [];
+function addLog(msg, cls){ if(LOG_SILENT) return; logs.push({msg, cls}); while(logs.length>LOG_MAX) logs.shift(); const el = document.getElementById('log'); if(el) el.innerHTML = logs.map(l=>`<span class="${l.cls||''}">• ${l.msg}</span>`).join('\n'); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
+
+const tip = document.getElementById('tooltip');
+function showTip(html, x, y){ tip.innerHTML = html; tip.style.display='block'; const pad=10; const w=260; const h= tip.offsetHeight||100; let left = Math.min(window.innerWidth - w - pad, x + 14); let top  = Math.min(window.innerHeight - h - pad, y + 14); tip.style.left = left + 'px'; tip.style.top = top + 'px'; }
+function hideTip(){ tip.style.display='none'; }
+function cardTip(def){ const meta = []; if(def.type==='Treasure') meta.push(`+${def.value} coins`); if(def.type==='Victory') meta.push(`${def.points} VP`); if(def.type==='Action') meta.push(def.desc||'Action'); return `<div class="tTitle">${def.name}</div><div class="tMeta">Type: ${def.type} · Cost: ${def.cost}</div><div style=\"margin-top:4px\">${meta.join(' · ')}</div>`; }
+
+
+
+// ------------------- Choice overlay (Workshop) -------------------
+function openGainChoice(maxCost, actor, source){
+  game.interactionLock = true; updateUndoUI();
+  const over = document.getElementById('choiceOverlay');
+  const grid = document.getElementById('choiceGrid'); grid.innerHTML = '';
+  document.getElementById('choiceTitle').textContent = 'Gain a card';
+  document.getElementById('choiceDetail').textContent = `Pick a card costing up to ${maxCost}.`;
+  const eligible = SUPPLY.filter(p=> p.count>0 && CARD_DEFS[p.key].cost<=maxCost);
+  eligible.sort((a,b)=> CARD_DEFS[b.key].cost - CARD_DEFS[a.key].cost || a.key.localeCompare(b.key));
+  eligible.forEach(pile=>{
+    const def = CARD_DEFS[pile.key];
+    const el = document.createElement('div'); el.className='pile';
+    el.innerHTML = `
+      <div class=\"count\">${pile.count}</div>
+      <div class=\"name\">
+        <div class=\"icon\">${cardIcon(def.name)}</div>
+        <div class=\"label\">${def.name}</div>
+      </div>
+      <div class=\"meta\">Cost: ${def.cost}</div>
+    `;
+    el.onclick = ()=>{
+      pile.count--; actor.discard.push(instance(def.name));
+      addLog(`You gained ${def.name} with ${source}.`);
+      over.classList.remove('show');
+      game.interactionLock = false; updateUndoUI(); checkEndgameFlags(); render();
+    };
+    el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+    el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+    el.addEventListener('mouseleave', hideTip);
+    grid.appendChild(el);
+  });
+  over.classList.add('show');
+}
+
+
+
+// ------------------- Rendering -------------------
+function render(){
+  syncLockFromOverlay();
+  document.getElementById('actions').textContent = game.actions;
+  document.getElementById('buys').textContent    = game.buys;
+  document.getElementById('coins').textContent   = game.coins;
+  document.getElementById('phase').textContent   = game.phase.charAt(0).toUpperCase()+game.phase.slice(1);
+  const {p,a} = computeScores();
+  document.getElementById('pScore').textContent = p;
+  document.getElementById('aScore').textContent = a;
+  const pc = document.getElementById('playerCounts'); if(pc) pc.innerHTML = lastCountsHTML;
+
+  // SUPPLY
+  const s = document.getElementById('supply'); s.innerHTML='';
+  const groups = [ { title:'Coins', type:'Treasure' }, { title:'Victory Cards', type:'Victory' }, { title:'Action Cards', type:'Action' } ];
+  const sortMetric = (def, type)=> type==='Victory' ? (def.points||0) : def.cost;
+  groups.forEach(g=>{
+    const sec = document.createElement('div'); sec.className='supplySection';
+    const h = document.createElement('h3'); h.textContent = g.title; sec.appendChild(h);
+    const grid = document.createElement('div'); grid.className='supplyGrid'; sec.appendChild(grid);
+
+    SUPPLY.filter(p=>CARD_DEFS[p.key].type===g.type)
+      .sort((a,b)=>{ const da=CARD_DEFS[a.key], db=CARD_DEFS[b.key]; const va=sortMetric(da,g.type), vb=sortMetric(db,g.type); return vb-va || a.key.localeCompare(b.key); })
+      .forEach(pile=>{
+        const def = CARD_DEFS[pile.key];
+        const el = document.createElement('div'); el.className='pile'; if(pile.count===0) el.classList.add('empty');
+        el.innerHTML = `
+          <div class=\"count\">${pile.count}</div>
+          <div class=\"name\">
+            <div class=\"icon\">${cardIcon(def.name)}</div>
+            <div class=\"label\">${def.name}</div>
+          </div>
+          <div class=\"meta\">Cost: ${def.cost}</div>
+        `;
+        const canBuy = (!game.gameOver && !game.interactionLock && game.turn==='player' && game.phase==='buy' && game.buys>0 && game.coins>=def.cost && pile.count>0);
+        if(canBuy){ el.onclick = ()=>buy(def.name); el.classList.remove('disabled'); el.classList.add('buyable'); }
+        else { el.classList.add('disabled'); el.classList.remove('buyable'); el.onclick = null; }
+        el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+        el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+        el.addEventListener('mouseleave', hideTip);
+        grid.appendChild(el);
+      });
+    s.appendChild(sec);
+  });
+
+  // HAND
+  const hand = document.getElementById('player-hand'); hand.innerHTML='';
+  const indexed = game.player.hand.map((c,idx)=>({c,idx}));
+  const groupRank = { Action:0, Treasure:1, Victory:2 };
+  indexed.sort((a,b)=>{ const ga = groupRank[a.c.type] ?? 3; const gb = groupRank[b.c.type] ?? 3; if(ga!==gb) return ga-gb; if(a.c.type==='Action' && b.c.type==='Action') return a.c.name.localeCompare(b.c.name); if(a.c.type==='Treasure' && b.c.type==='Treasure') return (b.c.value||0)-(a.c.value||0) || a.c.name.localeCompare(b.c.name); if(a.c.type==='Victory' && b.c.type==='Victory') return (b.c.points||0)-(a.c.points||0) || a.c.name.localeCompare(b.c.name); return a.c.name.localeCompare(b.c.name); });
+  indexed.forEach(({c,idx})=>{
+    const el = document.createElement('div'); el.className='card';
+    el.innerHTML = `<div class=\"title\">${cardIcon(c.name)} ${c.name}</div><div class=\"type\">${c.type}</div>`;
+    const canPlayAction = (!game.gameOver && !game.interactionLock && c.type==='Action' && game.turn==='player' && game.phase==='action' && game.actions>0);
+    const canPlayTreasure = (!game.gameOver && !game.interactionLock && c.type==='Treasure' && game.turn==='player' && game.phase!=='buy');
+    if(canPlayAction || canPlayTreasure){ el.classList.add('playable'); el.onclick = ()=>play(idx); }
+    else { el.classList.add('disabled'); el.onclick = null; }
+    const def = CARD_DEFS[c.name];
+    el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+    el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+    el.addEventListener('mouseleave', hideTip);
+    hand.appendChild(el);
+  });
+
+  // Buttons
+  document.getElementById('endTurnBtn').onclick = ()=>{ if(!game.interactionLock){ Sound.play('end'); endTurn(); } };
+  document.getElementById('autoTreasureBtn').onclick = ()=>{ if(game.interactionLock) return; if(game.phase==='action') game.phase='treasure'; snapshot(); autoPlayTreasures(); };
+  document.getElementById('toBuyBtn').onclick = ()=>{ if(game.interactionLock) return; if(game.phase!=='buy'){ snapshot(); game.phase='buy'; addLog('Buy phase. Buying disables further card play this turn.'); render(); } };
+  document.getElementById('undoBtn').onclick = undo;
+
+  const changed = maybeAutoAdvance();
+  if(changed) return render();
+}
+
+function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinner(); return true; } return false; }
+
+
+// Export tip API for main.js safety
+window.hideTip = (typeof hideTip==='function') ? hideTip : function(){ var t=document.getElementById('tooltip'); if(t) t.style.display='none'; };
+window.showTip = (typeof showTip==='function') ? showTip : function(){};
+
