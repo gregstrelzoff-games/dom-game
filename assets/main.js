@@ -1,39 +1,18 @@
-/* build: v9.3.24 | file: assets/main.js | date: 2025-08-14 */
-// --- Early globals to avoid TDZ ---
-LOG_SILENT = false;
-logs = [];
-LOG_MAX = 10;
-console.log("%cDominion POC %cv9.3.23%c — index/base.css/poc-game/poc-ui/main all updated","font-weight:bold","color:#16a34a;font-weight:bold","color:inherit");
-// ensure #build element always exists
-(function(){
-  var _origGet = document.getElementById.bind(document);
-  document.getElementById = function(id){
-    if(id === 'build'){
-      var el = _origGet('build');
-      if(!el){
-        el = document.createElement('div');
-        el.id = 'build';
-        el.className = 'build';
-        (document.body || document.documentElement || document.head).appendChild(el);
-      }
-      return el;
-    }
-    return _origGet(id);
-  };
-})();
-// Safe logger
-function addLog(msg){
-  if (typeof LOG_SILENT !== 'undefined' && LOG_SILENT) return;
-  try { msg = String(msg); } catch(e){ msg = '[object]'; }
-  if (!Array.isArray(logs)) { try { logs = []; } catch(e){} }
-  logs.push(msg);
-  if (typeof LOG_MAX === 'number' && logs.length > LOG_MAX) logs = logs.slice(-LOG_MAX);
-  var el = document.getElementById('log'); if (el) el.textContent = logs.join('\n');
-}
-function clearLog(){ try{ logs = []; }catch(e){} var el = document.getElementById('log'); if(el) el.textContent=''; }
+/* build: v9.3.25 | file: assets/main.js | date: 2025-08-14 */
+var LOG_SILENT=false; var logs=[]; var LOG_MAX=10;
+// BUILD bootstrap
+var BUILD = (typeof window!=='undefined' && window.BUILD) ? window.BUILD : {
+  num: 'v9.3.25',
+  date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'})
+};
+if (typeof window!=='undefined') window.BUILD = BUILD;
+
+try{console.log(`%cDominion POC %c${BUILD.num}%c — index/base.css/poc-game/poc-ui/main all updated`,"font-weight:bold","color:#16a34a;font-weight:bold","color:inherit");}catch(_){}
+(function(){var g=document.getElementById.bind(document);document.getElementById=function(id){if(id==='build'){var el=g('build');if(!el){el=document.createElement('div');el.id='build';el.className='build';(document.body||document.documentElement||document.head).appendChild(el);}return el;}return g(id);};})();
+function addLog(msg){ if(LOG_SILENT) return; try{msg=String(msg);}catch(e){msg='[object]';} if(!Array.isArray(logs)) logs=[]; logs.push(msg); if(typeof LOG_MAX==='number' && logs.length>LOG_MAX) logs=logs.slice(-LOG_MAX); var el=document.getElementById('log'); if(el) el.textContent=logs.join('\n'); } function clearLog(){ logs=[]; var el=document.getElementById('log'); if(el) el.textContent=''; }
 
 // ------------------- Build Tag & Favicon -------------------
-
+// BUILD provided via bootstrap
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -245,15 +224,7 @@ function render(){
 function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinner(); return true; } return false; }
 
 
-// Clamp #log to last LOG_MAX lines
-(function(){
-  function clamp(){ var el=document.getElementById('log'); if(!el) return;
-    var lines=(el.textContent||'').split(/\r?\n/); if(lines.length>LOG_MAX) el.textContent=lines.slice(-LOG_MAX).join('\n'); }
-  function install(){ var el=document.getElementById('log'); if(!el) return;
-    var mo=new MutationObserver(clamp); mo.observe(el,{childList:true,subtree:true,characterData:true}); clamp(); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install, {once:true}); else install();
-})();
-
+(function(){ function clamp(){ var el=document.getElementById('log'); if(!el) return; var lines=(el.textContent||'').split(/\r?\n/); if(lines.length>LOG_MAX) el.textContent=lines.slice(-LOG_MAX).join('\n'); } function install(){ var el=document.getElementById('log'); if(!el) return; var mo=new MutationObserver(clamp); mo.observe(el,{childList:true,subtree:true,characterData:true}); clamp(); } if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', install, {once:true}); else install(); })();
 if(typeof init==='function'){
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}
   else{init();}

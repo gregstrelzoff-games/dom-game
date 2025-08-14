@@ -1,88 +1,38 @@
-<!-- build: v9.3.24 | file: index.html | date: 2025-08-14 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dominion POC — Player vs AI (v9.3.24)</title>
-  <link rel="stylesheet" href="styles/base.css?v=v9.3.24"/>
-  <link rel="icon" href="G.png" />
-</head>
-<body>
-  <div class="app">
-    <div class="topbar">
-      <div class="top-left">
-        <h1>Dominion — POC (You vs AI)</h1>
-        <div class="control-line"><label class="pill toggle"><input type="checkbox" id="autoAdvance"> Auto-advance phases</label></div>
-        <div class="control-line"><label class="pill toggle"><input type="checkbox" id="debugAICheck" checked> Watch the AI</label></div>
-        <div class="control-line">
-          <label class="pill toggle">AI:
-            <select id="aiMode">
-              <option value="weak">Weak</option>
-              <option value="strong" selected>Strong</option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <button class="btn" id="newGameBtn">New Game</button>
-        <button class="btn" id="tutorialBtn" title="Show the tutorial">Tutorial</button>
-        <div class="sound-controls">
-          <span>🔊</span>
-          <input type="range" id="vol" min="0" max="100" step="1" />
-          <label class="toggle" style="margin-left:auto"><input type="checkbox" id="muteToggle"> Mute</label>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="panel">
-        <h2>Supply</h2>
-        <div id="supply" class="supplySections"></div>
-      </div>
-      <div class="panel">
-        <h2>AI Status & Log</h2>
-        <div class="log" id="ai-status">Waiting for your turn…</div>
-        <div class="log mono" id="ai-debug" style="display:none"></div>
-        <div class="log mono" id="log">Action > Treasure > Buy. Once you buy, you can't play more cards this turn.</div>
-      </div>
-    </div>
-    <div class="row" style="margin-top:16px">
-      <div class="panel">
-        <h2>Game Status</h2>
-        <div class="stats-rows">
-          <div class="stats">
-            <span class="pill score"><span class="score-label">Score:</span> <span style="opacity:.9"><span class="you-label">You</span></span> <strong id="pScore">0</strong> · <span class="ai-label">AI</span> <strong id="aScore">0</strong></span>
-          </div>
-          <div class="stats">
-            <span class="pill">Phase: <strong id="phase">Action</strong></span>
-          </div>
-          <div class="stats">
-            <span class="pill">Actions: <strong id="actions">1</strong></span>
-            <span class="pill">Buys: <strong id="buys">1</strong></span>
-            <span class="pill">Coins: <strong id="coins">0</strong></span>
-          </div>
-        </div>
-      </div>
-      <div class="panel">
-        <h2>Your Cards</h2>
-        <div id="playerCounts" class="countsList"></div>
-      </div>
-    </div>
-    <div class="panel playArea" style="margin-top:16px">
-      <h2>Your Hand</h2>
-      <div id="player-hand" class="hand"></div>
-      <div class="actions" style="display:flex;gap:10px;align-items:center;padding:0 12px 12px;flex-wrap:wrap">
-        <button class="btn" id="toBuyBtn" title="B" style="width:auto">Go to Buy Phase</button>
-        <button class="btn" id="autoTreasureBtn" title="T" style="width:auto">Auto-Play Treasures</button>
-        <button class="btn" id="undoBtn" title="Z" style="width:auto">Undo last</button>
-        <button class="btn" id="endTurnBtn" title="E" style="width:auto">End Turn</button>
-      </div>
-      <div class="log mono" style="opacity:.85;padding:0 12px 12px">Shortcuts: A=play Action, T=auto-Treasure, B=Buy, E=End Turn, Z=Undo</div>
-    </div>
-  </div>
-  <div class="tooltip" id="tooltip"></div>
-  <script src="assets/poc-game.js?v=v9.3.24"></script>
-  <script src="assets/poc-ui.js?v=v9.3.24"></script>
-  <script src="assets/main.js?v=v9.3.24"></script>
-</body>
-</html>
+<!-- build: v9.3.25 | file: index.html | date: 2025-08-14 -->
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dominion POC — Player vs AI (v9.3.25)</title>
+<link rel="stylesheet" href="styles/base.css?v=v9.3.25"/>
+<link rel="icon" href="G.png" />
+</head><body>
+<div class="app"><div class="topbar"><div class="top-left">
+<h1>Dominion — POC (You vs AI)</h1>
+<div class="control-line"><label class="pill toggle"><input type="checkbox" id="autoAdvance"> Auto-advance phases</label></div>
+<div class="control-line"><label class="pill toggle"><input type="checkbox" id="debugAICheck" checked> Watch the AI</label></div>
+<div class="control-line"><label class="pill toggle">AI: <select id="aiMode"><option value="weak">Weak</option><option value="strong" selected>Strong</option></select></label></div>
+</div><div class="topbar-right">
+<button class="btn" id="newGameBtn">New Game</button>
+<button class="btn" id="tutorialBtn" title="Show the tutorial">Tutorial</button>
+<div class="sound-controls"><span>🔊</span><input type="range" id="vol" min="0" max="100" step="1" /><label class="toggle" style="margin-left:auto"><input type="checkbox" id="muteToggle"> Mute</label></div>
+</div></div>
+<div class="row"><div class="panel"><h2>Supply</h2><div id="supply" class="supplySections"></div></div>
+<div class="panel"><h2>AI Status & Log</h2><div class="log" id="ai-status">Waiting for your turn…</div><div class="log mono" id="ai-debug" style="display:none"></div><div class="log mono" id="log">Action > Treasure > Buy. Once you buy, you can't play more cards this turn.</div></div></div>
+<div class="row" style="margin-top:16px"><div class="panel"><h2>Game Status</h2><div class="stats-rows">
+<div class="stats"><span class="pill score"><span class="score-label">Score:</span> <span style="opacity:.9"><span class="you-label">You</span></span> <strong id="pScore">0</strong> · <span class="ai-label">AI</span> <strong id="aScore">0</strong></span></div>
+<div class="stats"><span class="pill">Phase: <strong id="phase">Action</strong></span></div>
+<div class="stats"><span class="pill">Actions: <strong id="actions">1</strong></span><span class="pill">Buys: <strong id="buys">1</strong></span><span class="pill">Coins: <strong id="coins">0</strong></span></div>
+</div></div><div class="panel"><h2>Your Cards</h2><div id="playerCounts" class="countsList"></div></div></div>
+<div class="panel playArea" style="margin-top:16px"><h2>Your Hand</h2><div id="player-hand" class="hand"></div>
+<div class="actions" style="display:flex;gap:10px;align-items:center;padding:0 12px 12px;flex-wrap:wrap">
+<button class="btn" id="toBuyBtn" title="B" style="width:auto">Go to Buy Phase</button>
+<button class="btn" id="autoTreasureBtn" title="T" style="width:auto">Auto-Play Treasures</button>
+<button class="btn" id="undoBtn" title="Z" style="width:auto">Undo last</button>
+<button class="btn" id="endTurnBtn" title="E" style="width:auto">End Turn</button>
+</div><div class="log mono" style="opacity:.85;padding:0 12px 12px">Shortcuts: A=play Action, T=auto-Treasure, B=Buy, E=End Turn, Z=Undo</div>
+</div></div>
+<div class="tooltip" id="tooltip"></div>
+<script src="assets/poc-game.js?v=v9.3.25"></script>
+<script src="assets/poc-ui.js?v=v9.3.25"></script>
+<script src="assets/main.js?v=v9.3.25"></script>
+</body></html>

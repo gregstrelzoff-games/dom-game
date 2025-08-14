@@ -1,12 +1,14 @@
-/* build: v9.3.24 | file: styles/base.css | date: 2025-08-14 */
-/* Normalize all cards/piles to #E5E7EB and minor UI tweaks */
+/* build: v9.3.25 | file: styles/base.css | date: 2025-08-14 */
 .card, .card.treasure, .card.action, .card.victory, .pile, .supply .pile .card { background:#E5E7EB !important; }
 .score-label{ color:#000; font-weight:600; }
 .you-label, .ai-label { color:#84CC16; font-weight:700; }
-
-/* 'EMPTY' overlay for exhausted piles */
-.pile.empty, .pile[data-empty="1"], .pile[data-count="0"] { position: relative; opacity: .85; filter: grayscale(0.2) contrast(0.95); }
-.pile.empty::after, .pile[data-empty="1"]::after, .pile[data-count="0"]::after { content: "EMPTY"; position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; font-weight:800; letter-spacing:2px; color:#111827; background: repeating-linear-gradient(45deg, rgba(0,0,0,.08) 0, rgba(0,0,0,.08) 8px, transparent 8px, transparent 16px); text-shadow: 0 1px 0 rgba(255,255,255,.4); mix-blend-mode: multiply; }
+.pile.empty, .pile[data-empty="1"], .pile[data-count="0"] { position: relative; opacity:.85; filter:grayscale(.2) contrast(.95); }
+.pile.empty::after, .pile[data-empty="1"]::after, .pile[data-count="0"]::after {
+  content:"EMPTY"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-weight:800; letter-spacing:2px; color:#111827;
+  background:repeating-linear-gradient(45deg, rgba(0,0,0,.08) 0, rgba(0,0,0,.08) 8px, transparent 8px, transparent 16px);
+  text-shadow:0 1px 0 rgba(255,255,255,.4); mix-blend-mode:multiply;
+}
 
 :root{
       /* Requested palette */
