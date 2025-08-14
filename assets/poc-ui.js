@@ -1,4 +1,4 @@
-/* build: v9.3.20 | file: assets/poc-ui.js | date: 2025-08-14 */
+/* build: v9.3.21 | file: assets/poc-ui.js | date: 2025-08-14 */
 // Robust hover tooltips + empty pile overlay + default AI debug ON
 (function(){
   function $(id){ return document.getElementById(id); }
