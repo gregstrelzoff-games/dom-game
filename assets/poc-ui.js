@@ -1,4 +1,4 @@
-/* build: v9.3.23 | file: assets/poc-ui.js | date: 2025-08-14 */
+/* build: v9.3.24 | file: assets/poc-ui.js | date: 2025-08-14 */
 (function(){
   function $(id){ return document.getElementById(id); }
   function tipEl(){ var t=$('tooltip'); if(!t){ t=document.createElement('div'); t.id='tooltip'; document.body.appendChild(t);} t.style.pointerEvents='none'; return t; }
