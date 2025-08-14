@@ -1,10 +1,11 @@
+<!-- build: v9.3.19 | file: index.html | date: 2025-08-14 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dominion POC — Player vs AI (v9.3.17)</title>
-  <link rel="stylesheet" href="styles/base.css?v=v9.3.17"/>
+  <title>Dominion POC — Player vs AI (v9.3.19)</title>
+  <link rel="stylesheet" href="styles/base.css?v=v9.3.19"/>
   <link rel="icon" href="G.png" />
 </head>
 <body>
@@ -83,49 +84,10 @@
     </div>
   </div>
 
-  <!-- Chat -->
-  <div class="chat-panel" id="chatPanel">
-    <div class="chat-head"><span class="title">Table Talk</span><div class="tools"><button class="btn" id="clearChat" title="Clear chat" style="width:auto">🧹</button></div></div>
-    <div class="chat-body" id="chatBody"></div>
-    <div class="chat-input"><input id="chatInput" placeholder="Say something…"/><button id="chatSend">Send</button></div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-  <div class="build" id="build"></div>
-
-  <div class="overlay" id="overlay">
-    <div class="modal" id="modal">
-      <h3 id="winnerTitle">Game Over</h3>
-      <p id="winnerDetail"></p>
-      <div class="footer"><button class="btn" onclick="location.reload()" style="width:auto">New Game</button></div>
-    </div>
-  </div>
-
-  <!-- Choice overlay -->
-  <div class="overlay" id="choiceOverlay">
-    <div class="modal" id="choiceModal">
-      <h3 id="choiceTitle">Gain a card</h3>
-      <p id="choiceDetail">Pick a card.</p>
-      <div id="choiceGrid" class="supplyGrid"></div>
-    </div>
-  </div>
-
-  <!-- Guided tour overlay -->
-  <div class="overlay coach" id="coach" style="background:rgba(2,6,23,.45)">
-    <div class="modal step" id="coachStep" style="left:40px;top:40px;min-width:300px">
-      <div class="title" id="coachTitle" style="font-weight:800;margin-bottom:4px;color:#fff">Welcome!</div>
-      <div id="coachText" style="color:#D1D5DB">Let’s do a quick tour.</div>
-      <div class="controls" style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn" id="coachSkip" style="width:auto">Skip</button>
-        <button class="btn" id="coachNext" style="width:auto">Next →</button>
-      </div>
-    </div>
-  </div>
-
   <div class="tooltip" id="tooltip"></div>
 
-  <script src="assets/poc-game.js?v=v9.3.17"></script>
-  <script src="assets/poc-ui.js?v=v9.3.17"></script>
-  <script src="assets/main.js?v=v9.3.17"></script>
+  <script src="assets/poc-game.js?v=v9.3.19"></script>
+  <script src="assets/poc-ui.js?v=v9.3.19"></script>
+  <script src="assets/main.js?v=v9.3.19"></script>
 </body>
 </html>

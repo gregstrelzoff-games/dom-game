@@ -1,4 +1,5 @@
-// v9.3.17: robust tooltip + empty pile watcher + default AI debug ON
+/* build: v9.3.19 | file: assets/poc-ui.js | date: 2025-08-14 */
+// Robust hover tooltips + empty pile overlay + default AI debug ON
 (function(){
   function $(id){ return document.getElementById(id); }
   function tipEl(){
@@ -14,9 +15,7 @@
     if (!key) { var txt = (el.textContent||'').trim(); if (txt) key = txt.split(/\s+/)[0]; }
     return key || null;
   }
-  function defFor(key){
-    try{ return (window.CARD_DEFS && window.CARD_DEFS[key]) || null; }catch(e){ return null; }
-  }
+  function defFor(key){ try{ return (window.CARD_DEFS && window.CARD_DEFS[key]) || null; }catch(e){ return null; } }
   function renderTipFor(el, e){
     var k = cardKeyFrom(el); if(!k) return hide();
     var def = defFor(k) || {};
@@ -33,16 +32,9 @@
     t.style.top  = (e.pageY + 12) + 'px';
   }
   function hide(){ var t = $('tooltip'); if(t) t.style.display='none'; }
-  function onOver(e){
-    var el = e.target.closest ? e.target.closest('.card,[data-card]') : null;
-    if (!el) return hide();
-    renderTipFor(el, e);
-  }
-  function onMove(e){
-    var t = $('tooltip'); if(!t || t.style.display!=='block') return;
-    t.style.left = (e.pageX + 12) + 'px';
-    t.style.top  = (e.pageY + 12) + 'px';
-  }
+  function onOver(e){ var el = e.target.closest ? e.target.closest('.card,[data-card]') : null; if (!el) return hide(); renderTipFor(el, e); }
+  function onMove(e){ var t = $('tooltip'); if(!t || t.style.display!=='block') return; t.style.left=(e.pageX+12)+'px'; t.style.top=(e.pageY+12)+'px'; }
+
   // Empty pile watcher
   function markEmptyPiles(){
     var root = $('supply'); if(!root) return;
@@ -50,12 +42,8 @@
     piles.forEach(function(p){
       var cntEl = p.querySelector('.count, .qty, [data-count], [data-qty]');
       var val = null;
-      if (cntEl && cntEl.getAttribute){
-        val = cntEl.getAttribute('data-count') || cntEl.getAttribute('data-qty');
-      }
-      if (val==null && cntEl) {
-        var m = (cntEl.textContent||'').match(/\d+/); if(m) val = m[0];
-      }
+      if (cntEl && cntEl.getAttribute) val = cntEl.getAttribute('data-count') || cntEl.getAttribute('data-qty');
+      if (val==null && cntEl) { var m = (cntEl.textContent||'').match(/\d+/); if(m) val = m[0]; }
       if (val==null && p.hasAttribute('data-count')) val = p.getAttribute('data-count');
       if (String(val) === '0') p.classList.add('empty'); else p.classList.remove('empty');
     });

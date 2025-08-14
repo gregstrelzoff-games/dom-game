@@ -1,3 +1,5 @@
+/* build: v9.3.19 | file: assets/poc-game.js | date: 2025-08-14 */
+
 // ------------------- Card Definitions -------------------
 const CARD_DEFS = {
   Copper:    { name:'Copper',    cost:0, type:'Treasure', value:1, desc:'+1 coin' },

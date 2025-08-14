@@ -1,14 +1,15 @@
-var tip = null;
-tip =  null;
+/* build: v9.3.19 | file: assets/main.js | date: 2025-08-14 */
 // --- Early globals to avoid TDZ ---
 var LOG_SILENT = false;
 var logs = [];
 var LOG_MAX = 10;
 
+console.log("%cDominion POC %cv9.3.19%c — index/base.css/poc-game/poc-ui/main all updated",
+  "font-weight:bold", "color:#16a34a;font-weight:bold", "color:inherit");
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v9.3.17', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v9.3.19', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -42,7 +43,7 @@ Sound.load();
 
 
 // ------------------- Card Definitions -------------------
-const CARD_DEFS = {
+CARD_DEFS =  {
   Copper:    { name:'Copper',    cost:0, type:'Treasure', value:1, desc:'+1 coin' },
   Silver:    { name:'Silver',    cost:3, type:'Treasure', value:2, desc:'+2 coins' },
   Gold:      { name:'Gold',      cost:6, type:'Treasure', value:3, desc:'+3 coins' },
@@ -67,7 +68,7 @@ const CARD_DEFS = {
                effect: (g,actor)=>{ if(actor===g.player){ openGainChoice(4, g.player, 'Workshop'); } else { const pick = aiGainChoiceUpTo(4); if(pick){ const pile=getPile(pick); if(pile&&pile.count>0){ pile.count--; g.ai.discard.push(instance(pick)); } } } } },
 };
 
-const SUPPLY = [
+SUPPLY =  [
   { key:'Copper',   count:60 },
   { key:'Silver',   count:40 },
   { key:'Gold',     count:30 },
@@ -265,7 +266,6 @@ function render(){
 function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinner(); return true; } return false; }
 
 
-
 // Clamp #log to last LOG_MAX lines
 (function(){
   function clamp(){ var el = document.getElementById('log'); if(!el) return;
@@ -282,15 +282,7 @@ function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinne
 })();
 
 
-
 if(typeof init==='function'){
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}
   else{init();}
 }
-
-
-// v9.3.17: override tooltip handlers; poc-ui.js owns real behavior
-try {
-  window.showTip = function(){ /* handled by poc-ui.js */ };
-  window.hideTip = function(){ var el = document.getElementById('tooltip'); if(el) el.style.display='none'; };
-} catch(e){}
