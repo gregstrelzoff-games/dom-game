@@ -129,35 +129,99 @@
     .chat-input{display:flex;gap:6px;padding:10px;border-top:1px solid var(--outline);background:#F8FAFF}
     .chat-input input{flex:1;background:#FFFFFF;color:var(--text);border:1px solid var(--outline);border-radius:10px;padding:8px}
     .chat-input button{background:var(--accent);color:#fff;border:1px solid var(--accent-strong);border-radius:10px;padding:8px 10px;cursor:pointer}
-.card, .card.treasure, .card.action, .card.victory, .pile:not(.empty), .supply .pile .card { background:#E5E7EB !important; }
+/* v9.3.14: normalize all cards/piles to #E5E7EB */
+.card, .card.treasure, .card.action, .card.victory, .pile, .supply .pile .card { background:#E5E7EB !important; }
 .score-label{ color:#000; font-weight:600; }
 
-/* v10.0.2: Use End Turn blue for player labels */
-.player .name.you, .player.you .name, .name.you,
-.player .name.ai, .player.ai .name, .name.ai {
-  color: var(--accent) !important;
+/* Safari/iOS support */
+:root{
+  --app-pad-top: env(safe-area-inset-top, 0px);
+  --app-pad-right: env(safe-area-inset-right, 0px);
+  --app-pad-bottom: env(safe-area-inset-bottom, 0px);
+  --app-pad-left: env(safe-area-inset-left, 0px);
 }
-/* Also scoreboard tags if present */
-.score .you, .score .ai, .status .you, .status .ai {
-  color: var(--accent) !important;
+html, body { height:100%; min-height:100%; }
+body { min-height:100vh; min-height:100svh; min-height:100dvh; }
+.app { padding-bottom: calc(12px + var(--app-pad-bottom)); padding-left: calc(12px + var(--app-pad-left)); padding-right: calc(12px + var(--app-pad-right)); }
+* { -webkit-tap-highlight-color: transparent; }
+.app, .panel, .topbar { -webkit-user-select: text; user-select: text; }
+input, textarea { -webkit-user-select: text; user-select: text; }
+.build-tag { font-size: 12px; opacity: .75; }
+
+
+/* v10.0.8 Compact layout (20% vertical reduction) */
+body.compact h1 { margin: 6px 0 4px; font-size: 18px; line-height: 1.1; }
+body.compact .topbar,
+body.compact .controls,
+body.compact .status { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+body.compact .topbar > *,
+body.compact .controls > *,
+body.compact .status > * { margin: 0; }
+
+body.compact .btn, body.compact button { padding: 4px 8px; line-height: 1.1; font-size: 13px; border-radius: 8px; }
+body.compact .pill { padding: 2px 6px; line-height: 1.1; font-size: 12px; }
+body.compact .pill.score { padding: 2px 8px; }
+
+/* Reduce gutters around main panels */
+body.compact .app { padding-top: 6px; }
+body.compact .panel { margin: 6px 0; padding: 6px 8px; }
+body.compact .row { margin: 6px 0; }
+
+/* Supply grid and piles spacing */
+body.compact .supply { margin-top: 6px; row-gap: 6px; }
+body.compact .pile { margin: 4px 6px; }
+body.compact .pile .count { transform: scale(0.9); }
+
+/* Hand spacing without changing card size */
+body.compact .hand { margin-top: 6px; }
+body.compact .hand .card { margin-top: 0; }
+body.compact .hand .zone { padding: 4px 0; }
+
+/* Top controls consolidation into a single line when width allows */
+body.compact .controls-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+body.compact #vol { height: 18px; }
+body.compact #muteToggle { transform: scale(0.9); transform-origin: left center; }
+
+/* Turn log + AI log tighten */
+body.compact .log { max-height: 22vh; }
+@supports (height: 1dvh) {
+  body.compact .log { max-height: 20dvh; }
 }
 
-/* v10.0.2: brighter blue labels matching End Turn */
-.you-label, .ai-label { color: var(--accent) !important; font-weight: 700; }
-#pScore, #aScore { color: var(--accent) !important; }
+/* Footer spacing */
+body.compact footer, body.compact .footer { margin-top: 6px; padding: 6px 8px; }
 
 
-/* v10.0.3: Score pill restyle */
-.pill.score {
-  background: var(--accent) !important;
-  color: #fff !important;
-  border-color: rgba(0,0,0,0.15) !important;
+/* v10.0.8 status tighten */
+body.compact .status .pill { margin: 0 4px 0 0; }
+body.compact .status { gap: 6px; }
+
+/* v10.0.9: tooltip base style */
+.tip{ background:#111827; color:#fff; border:1px solid #374151; border-radius:8px; font-size:12px; max-width:280px; padding:8px; box-shadow:0 6px 16px rgba(0,0,0,.35); }
+
+/* v10.0.9: ensure cards receive pointer events */
+.card{ pointer-events:auto; }
+
+/* v10.0.16 selection */
+button, .btn, .card, .pile, .pill { -webkit-user-select: none; user-select: none; }
+.countsList, .log, .status, .panel, .topbar, .app { -webkit-user-select: text; user-select: text; }
+
+#playerCounts .countsList{ margin-top:0; gap:2px; }
+
+/* v10.0.22 Your Cards spacing & font */
+#playerCounts .countsList { margin-top: 0; padding-top: 0; }
+#playerCounts .countsList .row { font-size:14px; line-height:1.05; margin:0 0 2px 0; }
+
+/* v10.0.22 supply card shrink */
+#supply .card, .supply .card, .piles .card{
+  height: auto;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
-.pill.score .score-label,
-.pill.score .you-label,
-.pill.score .ai-label,
-.pill.score strong,
-.pill.score #pScore,
-.pill.score #aScore {
-  color: #fff !important;
-}
+#supply .card .art, .supply .card .art, .piles .card .art{ max-height: 70%; }
+#supply .card .name, .supply .card .name, .piles .card .name{ margin-bottom: 2px; line-height: 1.0; }
+
+/* v10.0.22 chat minimize */
+#chatPanel.minimized{ height: 28px; overflow: hidden; }
+#chatPanel.minimized #chatLog, #chatPanel.minimized #chatInputRow{ display:none; }
+#chatMinBtn{ font-size:12px; padding:2px 8px; }

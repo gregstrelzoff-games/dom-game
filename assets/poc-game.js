@@ -49,7 +49,7 @@ const game = {
   ai:     { deck:[], discard:[], hand:[], played:[] },
   actions:1, buys:1, coins:0, turn:'player', phase:'action',
   autoAdvance:true,
-  debugAI:false,
+  debugAI:true,
   aiActions:1, aiBuys:1, aiCoins:0,
   endAfterThisTurn:false, gameOver:false,
   aiMode:'strong',
@@ -91,7 +91,7 @@ function showWinner(){ const {p,a} = computeScores(); const title = (p>a)? 'You 
 function phaseBand(){ const prov = getPile('Province'); const left = prov? prov.count : 12; if(left <= 3) return 'late'; if(left <= 7) return 'mid'; return 'early'; }
 
 // Player counts HTML
-function playerCountsHTML(){ const all=[...game.player.deck, ...game.player.discard, ...game.player.hand]; const map={}; const typeTotals={Treasure:0, Victory:0, Action:0}; all.forEach(c=>{ map[c.name]=(map[c.name]||0)+1; typeTotals[c.type]=(typeTotals[c.type]||0)+1; }); const block=(label,names)=>{ const total = typeTotals[label]||0; const details = names.map(n=> `${n} ${map[n]||0}`).join(' · '); return `<div class=\"countGroup\"><div class=\"row\"><span class=\"label\">${label}</span><span class=\"totalWrap\"><span class=\"mini\">total</span><span class=\"totalNum\"><strong>${total}</strong></span></span></div><div class=\"sub\">${details}</div></div>`; }; return [ block('Treasure',['Gold','Silver','Copper']), block('Victory',['Province','Duchy','Estate']), block('Action',['Festival','Laboratory','Market','Merchant','Smithy','Village','Workshop','Woodcutter']) ].join(''); }
+function playerCountsHTML(){}
 let lastCountsHTML = '';
 
 

@@ -1,3 +1,11 @@
+
+function applyCompactControls(){
+  try{
+    var root = document.querySelector('.topbar') || document.querySelector('.controls') || document.getElementById('controls');
+    if(root && !root.classList.contains('controls-bar')) root.classList.add('controls-bar');
+  }catch(e){}
+}
+
 // --- Early globals to avoid TDZ ---
 var LOG_SILENT = false;
 var logs = [];              // buffer until UI hooks in
@@ -6,7 +14,7 @@ var LOG_MAX = 10;           // clamp log lines
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v10.0.6', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v10.0.22', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -32,9 +40,10 @@ const Sound = {
   chirp(f1=300, f2=900, dur=0.15, type='triangle', gain=0.35){ if(!this.ctx || this.muted) return; const t=this.now(); const o=this.ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f1, t); o.frequency.linearRampToValueAtTime(f2, t+dur); this.env(o,t,0.005, dur*0.7, 0.0, 0.12, gain); o.start(t); o.stop(t+dur+0.2); },
   noise(dur=0.15, gain=0.25, band=[300,2000]){ if(!this.ctx || this.muted) return; const t=this.now(); const buf=this.ctx.createBuffer(1, this.ctx.sampleRate*dur, this.ctx.sampleRate); const data=buf.getChannelData(0); for(let i=0;i<data.length;i++){ data[i]=Math.random()*2-1; } const src=this.ctx.createBufferSource(); src.buffer=buf; let node=src; if(band){ const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=(band[0]+band[1])/2; bp.Q.value=3; src.connect(bp); node=bp; } this.env(node,t,0.005, dur*0.5, 0.0, 0.15, gain); src.start(t); src.stop(t+dur+0.2); },
   seq(notes){ if(!this.ctx || this.muted) return; const base=this.now(); notes.forEach(n=>{ const t=base+(n.t||0); const o=this.ctx.createOscillator(); o.type=n.type||'sine'; o.frequency.setValueAtTime(n.f, t); this.env(o,t,0.005,(n.d||0.1)*0.7,0.0,(n.d||0.1)*0.3,n.g||0.4); o.start(t); o.stop(t+(n.d||0.1)+0.2); }); },
-  play(kind){ switch(kind){ case 'gain': this.tone(880,0.10,'sine',0.35); this.tone(1320,0.08,'triangle',0.25); break; case 'draw': this.chirp(320,520,0.08,'triangle',0.25); break; case 'action': this.chirp(420,860,0.12,'triangle',0.35); break; case 'coins': this.seq([{t:0,f:900,d:0.05,g:0.35,type:'square'},{t:0.06,f:1200,d:0.05,g:0.25,type:'square'}]); break; case 'buy': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:990,d:0.1,g:0.25}]); break; case 'shuffle': this.noise(0.25,0.22,[200,3000]); break; case 'attack': this.seq([{t:0,f:220,d:0.14,g:0.4,type:'sawtooth'},{t:0.1,f:180,d:0.12,g:0.35,type:'sawtooth'}]); break; case 'reaction': this.chirp(500,1000,0.16,'sine',0.3); break; case 'error': this.tone(140,0.18,'sawtooth',0.35); break; case 'end': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:880,d:0.12,g:0.35},{t:0.26,f:1320,d:0.16,g:0.25}]); break; } }
+  play(kind){ switch(kind){ case 'gain': this.tone(880,0.10,'sine',0.35); this.tone(1320,0.10,'triangle',0.25); break; case 'draw': this.chirp(320,520,0.08,'triangle',0.25); break; case 'action': this.chirp(420,860,0.12,'triangle',0.35); break; case 'coins': this.seq([{t:0,f:900,d:0.05,g:0.35,type:'square'},{t:0.06,f:1200,d:0.05,g:0.25,type:'square'}]); break; case 'buy': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:990,d:0.1,g:0.25}]); break; case 'shuffle': this.noise(0.25,0.22,[200,3000]); break; case 'attack': this.seq([{t:0,f:220,d:0.14,g:0.4,type:'sawtooth'},{t:0.1,f:180,d:0.12,g:0.35,type:'sawtooth'}]); break; case 'reaction': this.chirp(500,1000,0.16,'sine',0.3); break; case 'error': this.tone(140,0.18,'sawtooth',0.35); break; case 'end': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:880,d:0.12,g:0.35},{t:0.26,f:1320,d:0.16,g:0.25}]); break; } }
 };
 Sound.load();
+['pointerdown','keydown','click','touchstart'].forEach(ev=> document.addEventListener(ev, ()=>Sound.resume(), {once:true}));
 ['pointerdown','keydown'].forEach(ev=> document.addEventListener(ev, ()=>Sound.resume(), {once:true}));
 
 
@@ -55,38 +64,104 @@ function updateUndoUI(){ const b = document.getElementById('undoBtn'); if(b) b.d
 
 
 // ------------------- Init -------------------
+
+
+// v10.0.19: Player-held counts (no totals), compact 3-line layout
+// v10.0.20: Player-held counts (safe mapping)
+function playerCountsHTML(){
+  try{
+    const p = game.player || {};
+    const zones = [p.hand||[], p.deck||[], p.discard||[], p.played||[]];
+    const counts = Object.create(null);
+    const toName = (c)=> (c && typeof c === 'object') ? (c.name || c.key || '') : String(c||'');
+    for(const zone of zones){
+      for(const c of zone){
+        const name = toName(c);
+        if(!name) continue;
+        counts[name] = (counts[name]||0) + 1;
+      }
+    }
+    const have = (n)=> counts[n] > 0;
+    const row = (arr)=> arr.filter(have).map(n => `${n} (${counts[n]})`).join('   ');
+
+    const tRow = row(['Gold','Silver','Copper']);
+    const vRow = row(['Province','Duchy','Estate']);
+    const fixed = new Set(['Gold','Silver','Copper','Province','Duchy','Estate']);
+    const others = Object.keys(counts).filter(n => !fixed.has(n)).sort();
+    const aRow = others.length ? row(others) : '';
+
+    return [
+      '<div class="countsList" style="margin-top:0">',
+      tRow ? `<div class="row">${tRow}</div>` : '',
+      vRow ? `<div class="row">${vRow}</div>` : '',
+      aRow ? `<div class="row">${aRow}</div>` : '',
+      '</div>'
+    ].join('');
+  }catch(e){
+    return '<div class="countsList"></div>';
+  }
+}
+
+
+
+// v10.0.21: Player-held counts for ALL game cards (zeros included)
+function playerCountsHTML(){
+  try{
+    const p = game.player || {};
+    const zones = [p.hand||[], p.deck||[], p.discard||[], p.played||[]];
+    const counts = Object.create(null);
+    const toName = (c)=> (c && typeof c === 'object') ? (c.name || c.key || '') : String(c||'');
+    for (const zone of zones){
+      for (const c of zone){
+        const name = toName(c);
+        if(!name) continue;
+        counts[name] = (counts[name]||0) + 1;
+      }
+    }
+    const fixedT = ['Gold','Silver','Copper'];
+    const fixedV = ['Province','Duchy','Estate'];
+    const fixedSet = new Set([...fixedT, ...fixedV]);
+    const supplyKeys = (typeof SUPPLY!=='undefined' && Array.isArray(SUPPLY)) ? SUPPLY.map(p=> p.key) : [];
+    const actions = supplyKeys.filter(k => !fixedSet.has(k)).sort();
+    const countOr0 = (n)=> counts[n] || 0;
+    const formatRow = (arr)=> arr.map(n => `${n} (${countOr0(n)})`).join('   ');
+    const tRow = formatRow(fixedT);
+    const vRow = formatRow(fixedV);
+    const aRow = actions.length ? formatRow(actions) : '';
+    return [
+      '<div class="countsList" style="margin-top:0">',
+      `<div class="row">${tRow}</div>`,
+      `<div class="row">${vRow}</div>`,
+      aRow ? `<div class="row">${aRow}</div>` : '',
+      '</div>'
+    ].join('');
+  }catch(e){
+    return '<div class="countsList"></div>';
+  }
+}
+
 function init(){
   const p=game.player, a=game.ai;
+  // v10.0.15: hard reset zones to avoid stale state
+  p.deck.length=p.discard.length=p.hand.length=p.played.length=0;
+  a.deck.length=a.discard.length=a.hand.length=a.played.length=0;
   for(let i=0;i<7;i++){ p.deck.push(instance('Copper')); a.deck.push(instance('Copper')); }
   for(let i=0;i<3;i++){ p.deck.push(instance('Estate')); a.deck.push(instance('Estate')); }
   shuffle(p.deck); shuffle(a.deck);
+  game.turn='player'; game.phase='action'; game.actions=1; game.buys=1; game.coins=0; game.turnNum=1;
   for(let i=0;i<5;i++){ drawOne(p); drawOne(a); }
+  game.initHandSize = Array.isArray(game?.player?.hand) ? game.player.hand.length : 5;
+
   document.getElementById('autoAdvance').checked=game.autoAdvance;
   document.getElementById('autoAdvance').onchange=(e)=>{ game.autoAdvance=e.target.checked; };
   const sel=document.getElementById('aiMode'); sel.value=game.aiMode; sel.onchange=(e)=>{ game.aiMode=e.target.value; toast(`AI set to ${game.aiMode}`); };
-  const dbg=document.getElementById('debugAICheck'); dbg.checked = true; game.debugAI = true; dbg.onchange=(e)=>{ game.debugAI=e.target.checked; writeAIDebug([]); };
-
-// v10.0.5: robust init to ensure AI watch is active if checkbox is pre-checked
-(function(){
-  try{
-    const dbg = document.getElementById('debugAICheck');
-    const aiPanel = document.getElementById('ai-debug');
-    if(dbg){
-      if(dbg.checked){
-        // mirror onchange behavior
-        if(typeof writeAIDebug === 'function'){ writeAIDebug([]); }
-        if(typeof game !== 'undefined'){ game.debugAI = true; }
-        if(aiPanel){ aiPanel.style.display = 'block'; }
-      }
-    }
-  }catch(e){ /* no-op */ }
-})();
-// v10.0.4: initialize AI watch state on load
-if (dbg.checked) { game.debugAI = true; writeAIDebug([]); document.getElementById('ai-debug').style.display='block'; }
+  const dbg=document.getElementById('debugAICheck'); dbg.checked=true; game.debugAI=true; dbg.onchange=(e)=>{ game.debugAI=e.target.checked; writeAIDebug([]); };
 
   // Top-right controls
+  document.body.classList.add('compact');
   document.getElementById('newGameBtn').onclick = ()=> location.reload();
   document.getElementById('tutorialBtn').onclick = ()=>{ Coach.ensureInit(); Coach.restart(); };
+  applyCompactControls();
 
   // Sound UI
   const v = document.getElementById('vol'); const m = document.getElementById('muteToggle');
@@ -101,8 +176,8 @@ if (dbg.checked) { game.debugAI = true; writeAIDebug([]); document.getElementByI
   render();
   Chat.init();
   Chat.startGame?.();
-  Coach.init(); Coach.maybeStart();
-  setTimeout(sanityCheck, 0);
+  window.addEventListener('load', function(){ try{ Coach.init?.(); Coach.maybeStart?.(); }catch(e){} });
+  setTimeout(sanityCheckOnce, 50);
 }
 
 
@@ -110,8 +185,8 @@ if (dbg.checked) { game.debugAI = true; writeAIDebug([]); document.getElementByI
 // ------------------- Keyboard Shortcuts -------------------
 function firstPlayableActionIndex(){ if(game.turn!=='player' || game.phase!=='action' || game.actions<=0 || game.interactionLock) return -1; return game.player.hand.findIndex(c=>c.type==='Action'); }
 
-/* v10.0.3: removed orphaned keydown handler body */
 
+/* v10.0.12: removed global keydown shortcuts */
 
 
 
@@ -122,7 +197,9 @@ const Chat = { elPanel:null, elBody:null, elInput:null, said:new Set(), storageK
 
 
 // ------------------- Sanity / smoke checks -------------------
-function sanityCheck(){ try{ LOG_SILENT = true; const supplyPiles = document.querySelectorAll('#supply .pile').length; const okSupply = supplyPiles >= 14 && SUPPLY.some(p=>p.key==='Market') && SUPPLY.some(p=>p.key==='Merchant') && SUPPLY.some(p=>p.key==='Workshop'); const okHand = Array.isArray(game.player.hand) && game.player.hand.length === 5; const okFns = typeof CARD_DEFS?.Smithy?.effect === 'function' && typeof cardIcon === 'function'; const okChatRaised = getComputedStyle(document.getElementById('chatPanel')).bottom === '88px'; const dummy = { actions:0, buys:0, coins:0, player:{deck:[],discard:[],hand:[],played:[]}, ai:{}, aiActions:0, aiBuys:0, aiCoins:0, merchantPending:{player:0,ai:0} }; CARD_DEFS.Woodcutter.effect(dummy, dummy.player); const okPlusBuy = dummy.buys===1 && dummy.coins===2; CARD_DEFS.Laboratory.effect(dummy, dummy.player); const okLabAction = dummy.actions===1; CARD_DEFS.Merchant.effect(dummy, dummy.player); const okMerchantFlag = dummy.merchantPending.player===1; openGainChoice(4, dummy.player, 'Test'); const nameLayoutOK = document.querySelector('#choiceGrid .name .label')!==null; closeChoiceOverlay(); LOG_SILENT = false; if(!(okSupply && okHand && okFns && okPlusBuy && okLabAction && okMerchantFlag && okChatRaised && nameLayoutOK)){ const msg = `Sanity failed (supply:${okSupply}, hand5:${okHand}, fns:${okFns}, +Buy:${okPlusBuy}, lab+Action:${okLabAction}, merchantFlag:${okMerchantFlag}, chatRaised:${okChatRaised}, choiceLayout:${nameLayoutOK}).`; console.error(msg); toast(msg); } else { console.log('Sanity check passed.'); } }catch(e){ LOG_SILENT=false; console.error('Sanity check exception', e); toast('Sanity check exception'); } }
+function sanityCheckOnce(){ 
+  if(window.__sanityDone) return; 
+  window.__sanityDone = true; try{ LOG_SILENT = true; const supplyPiles = document.querySelectorAll('#supply .pile').length; const okSupply = supplyPiles >= 14 && SUPPLY.some(p=>p.key==='Market') && SUPPLY.some(p=>p.key==='Merchant') && SUPPLY.some(p=>p.key==='Workshop'); const okHand = Array.isArray(game.player.hand) && game.player.hand.length === (game.initHandSize||5); const okFns = typeof CARD_DEFS?.Smithy?.effect === 'function' && typeof cardIcon === 'function'; const okChatRaised = parseInt(getComputedStyle(document.getElementById('chatPanel')).bottom,10) >= 60; const dummy = { actions:0, buys:0, coins:0, player:{deck:[],discard:[],hand:[],played:[]}, ai:{}, aiActions:0, aiBuys:0, aiCoins:0, merchantPending:{player:0,ai:0} }; CARD_DEFS.Woodcutter.effect(dummy, dummy.player); const okPlusBuy = dummy.buys===1 && dummy.coins===2; CARD_DEFS.Laboratory.effect(dummy, dummy.player); const okLabAction = dummy.actions===1; CARD_DEFS.Merchant.effect(dummy, dummy.player); const okMerchantFlag = dummy.merchantPending.player===1; openGainChoice(4, dummy.player, 'Test'); const nameLayoutOK = document.querySelector('#choiceGrid .name .label')!==null; closeChoiceOverlay(); LOG_SILENT = false; if(!(okSupply && okHand && okFns && okPlusBuy && okLabAction && okMerchantFlag && okChatRaised && nameLayoutOK)){ const msg = `Sanity failed (supply:${okSupply}, hand5:${okHand}, fns:${okFns}, +Buy:${okPlusBuy}, lab+Action:${okLabAction}, merchantFlag:${okMerchantFlag}, chatRaised:${okChatRaised}, choiceLayout:${nameLayoutOK}).`; console.error(msg); toast(msg); } else { console.log('Sanity check passed.'); } }catch(e){ LOG_SILENT=false; console.error('Sanity check exception', e); toast('Sanity check exception'); } }
 
 
 
@@ -135,10 +212,8 @@ init();
 LOG_MAX =  10; LOG_SILENT = false; logs =  [];
 function addLog(msg, cls){ if(LOG_SILENT) return; logs.push({msg, cls}); while(logs.length>LOG_MAX) logs.shift(); const el = document.getElementById('log'); if(el) el.innerHTML = logs.map(l=>`<span class="${l.cls||''}">• ${l.msg}</span>`).join('\n'); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
-
-const tip = document.getElementById('tooltip');
-function showTip(html, x, y){ tip.innerHTML = html; tip.style.display='block'; const pad=10; const w=260; const h= tip.offsetHeight||100; let left = Math.min(window.innerWidth - w - pad, x + 14); let top  = Math.min(window.innerHeight - h - pad, y + 14); tip.style.left = left + 'px'; tip.style.top = top + 'px'; }
-function hideTip(){ tip.style.display='none'; }
+let tooltipEl = document.getElementById('tooltip') || document.getElementById('tooltipEl');function showTip(html, x, y){ if(!tooltipEl){ tooltipEl=document.getElementById("tooltip")||document.getElementById("tip"); if(!tooltipEl) return; } tooltipEl.innerHTML = html; tooltipEl.style.display='block'; const pad=10; const w=260; const h= tooltipEl.offsetHeight||100; let left = Math.min(window.innerWidth - w - pad, x + 14); let top  = Math.min(window.innerHeight - h - pad, y + 14); tooltipEl.style.left = left + 'px'; tooltipEl.style.top = top + 'px'; }
+function hideTip(){ if(!tooltipEl){ tooltipEl=document.getElementById("tooltip")||document.getElementById("tip"); if(!tooltipEl) return; } tooltipEl.style.display='none'; }
 function cardTip(def){ const meta = []; if(def.type==='Treasure') meta.push(`+${def.value} coins`); if(def.type==='Victory') meta.push(`${def.points} VP`); if(def.type==='Action') meta.push(def.desc||'Action'); return `<div class="tTitle">${def.name}</div><div class="tMeta">Type: ${def.type} · Cost: ${def.cost}</div><div style=\"margin-top:4px\">${meta.join(' · ')}</div>`; }
 
 
@@ -161,7 +236,7 @@ function openGainChoice(maxCost, actor, source){
         <div class=\"icon\">${cardIcon(def.name)}</div>
         <div class=\"label\">${def.name}</div>
       </div>
-      <div class=\"meta\">Cost: ${def.cost}</div>
+      
     `;
     el.onclick = ()=>{
       Sound.play('gain'); pile.count--; actor.discard.push(instance(def.name));
@@ -169,8 +244,8 @@ function openGainChoice(maxCost, actor, source){
       over.classList.remove('show');
       game.interactionLock = false; updateUndoUI(); checkEndgameFlags(); render();
     };
-    el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.clientX, e.clientY));
-    el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+    el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.pageX, e.pageY));
+    el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.pageX, e.pageY));
     el.addEventListener('mouseleave', hideTip);
     grid.appendChild(el);
   });
@@ -181,6 +256,7 @@ function openGainChoice(maxCost, actor, source){
 
 // ------------------- Rendering -------------------
 function render(){
+  // v10.0.9: ensure hover bindings after render
   bindCardHover();
   syncLockFromOverlay();
   document.getElementById('actions').textContent = game.actions;
@@ -212,13 +288,13 @@ function render(){
             <div class=\"icon\">${cardIcon(def.name)}</div>
             <div class=\"label\">${def.name}</div>
           </div>
-          <div class=\"meta\">Cost: ${def.cost}</div>
+          
         `;
         const canBuy = (!game.gameOver && !game.interactionLock && game.turn==='player' && game.phase==='buy' && game.buys>0 && game.coins>=def.cost && pile.count>0);
         if(canBuy){ el.onclick = ()=>buy(def.name); el.classList.remove('disabled'); el.classList.add('buyable'); }
         else { el.classList.add('disabled'); el.classList.remove('buyable'); el.onclick = null; }
-        el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.clientX, e.clientY));
-        el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.clientX, e.clientY));
+        el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.pageX, e.pageY));
+        el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.pageX, e.pageY));
         el.addEventListener('mouseleave', hideTip);
         grid.appendChild(el);
       });
@@ -238,9 +314,6 @@ function render(){
     if(canPlayAction || canPlayTreasure){ el.classList.add('playable'); el.onclick = ()=>play(idx); }
     else { el.classList.add('disabled'); el.onclick = null; }
     const def = CARD_DEFS[c.name];
-    el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.clientX, e.clientY));
-    el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.clientX, e.clientY));
-    el.addEventListener('mouseleave', hideTip);
     hand.appendChild(el);
   });
 
@@ -258,7 +331,7 @@ function endIfNeeded(){ if(game.endAfterThisTurn){ game.gameOver=true; showWinne
 
 
 
-// v10.0.0: clamp log to last LOG_MAX lines even if other code appends
+// v9.3.14: clamp log to last LOG_MAX lines even if other code appends
 (function(){
   function clampLogTail(){
     var el = document.getElementById('log');
@@ -315,26 +388,54 @@ if(typeof init==='function'){
 
 function bindCardHover(){
   try{
-    const tip = document.getElementById('tip');
-    if(!tip || typeof showTip !== 'function' || typeof hideTip !== 'function') return;
-    document.body.addEventListener('mousemove', (e)=>{
-      if(tip.style.display==='block'){
-        tip.style.left = (e.pageX + 12) + 'px';
-        tip.style.top  = (e.pageY + 12) + 'px';
+
+    if(!tooltipEl) return;
+    // Move tooltip with the mouse
+    document.addEventListener('mousemove', function(e){
+      if(tooltipEl.style.display==='block'){
+        tooltipEl.style.left = (e.pageX + 12) + 'px';
+        tooltipEl.style.top  = (e.pageY + 12) + 'px';
       }
-    });
-    document.querySelectorAll('.card').forEach(el=>{
-      if(el.dataset.hoverBound) return;
-      el.addEventListener('mouseenter', (ev)=>{
+    }, {passive:true});
+    // Bind to all .card nodes currently in DOM
+    document.querySelectorAll('.card').forEach(function(el){
+      if (el.closest && (el.closest('#player-hand') || el.id==='player-hand')) { el.dataset.hoverBound='1'; return; } if (el.closest && el.closest('#player-hand')) { el.dataset.hoverBound='1'; return; } if(el.dataset.hoverBound) return; if(el.closest('#player-hand')) { return; } el.addEventListener('mouseenter', function(ev){
         const key = el.getAttribute('data-key') || el.getAttribute('data-card') || el.id || '';
         const def = (typeof CARD_DEFS!=='undefined') && (CARD_DEFS[key] || CARD_DEFS[(key||'').replace(/-pile$/,'')]);
-        if(def){
-          const html = cardTip(def);
-          showTip(html, ev.pageX+12, ev.pageY+12);
-        }
+        if(def){ const html = cardTip(def); showTip(html, ev.pageX+12, ev.pageY+12); }
       });
-      el.addEventListener('mouseleave', ()=> hideTip());
+      el.addEventListener('mouseleave', function(){ hideTip(); });
+      // Touch support (iOS Safari)
+      el.addEventListener('touchstart', function(ev){
+        const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        const key = el.getAttribute('data-key') || el.getAttribute('data-card') || el.id || '';
+        const def = (typeof CARD_DEFS!=='undefined') && (CARD_DEFS[key] || CARD_DEFS[(key||'').replace(/-pile$/,'')]);
+        if(def){ const html = cardTip(def); showTip(html, (t.pageX||0)+12, (t.pageY||0)+12); }
+      }, {passive:true});
+      el.addEventListener('touchend', function(){ hideTip(); }, {passive:true});
+      el.addEventListener('touchcancel', function(){ hideTip(); }, {passive:true});
       el.dataset.hoverBound = '1';
     });
   }catch(_e){ /* no-op */ }
 }
+
+// v10.0.22: Hard-disable hover/tooltips in player's hand
+document.addEventListener('DOMContentLoaded', function(){
+  const hand = document.getElementById('player-hand');
+  if(hand){
+    hand.querySelectorAll('[title]').forEach(n=> n.removeAttribute('title'));
+    hand.addEventListener('mouseenter', function(){ try{ hideTip && hideTip(); }catch(e){} }, true);
+    hand.addEventListener('mousemove', function(){ try{ hideTip && hideTip(); }catch(e){} }, true);
+  }
+});
+
+// v10.0.22 chat minimize toggle
+function toggleChatMin(){
+  const panel = document.getElementById('chatPanel');
+  if(!panel) return;
+  panel.classList.toggle('minimized');
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const b = document.getElementById('chatMinBtn');
+  if(b){ b.addEventListener('click', toggleChatMin); }
+});

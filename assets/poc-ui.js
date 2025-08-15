@@ -1,4 +1,4 @@
-// v10.0.0: minimal hover tooltip restore
+// v9.3.14: minimal hover tooltip restore
 (function(){
   var tip;
   function tipEl(){ if(!tip) tip = document.getElementById('tooltip'); return tip; }
