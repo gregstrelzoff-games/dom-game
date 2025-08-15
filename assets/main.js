@@ -1,4 +1,15 @@
 
+
+// v10.0.44 live remaining from SUPPLY
+function getSupplyRemaining(def){
+  try{
+    if (typeof SUPPLY==='undefined' || !Array.isArray(SUPPLY)) return '';
+    var key = (def && (def.key || def.name)) || def || '';
+    var m = SUPPLY.find(function(p){ return p && (p.key===key || p.name===key || (def && (p.key===def.key || p.name===def.name))); });
+    return m ? (m.count||0) : '';
+  }catch(e){ return ''; }
+}
+
 function applyCompactControls(){
   try{
     var root = document.querySelector('.topbar') || document.querySelector('.controls') || document.getElementById('controls');
@@ -14,7 +25,7 @@ var LOG_MAX = 10;           // clamp log lines
 
 
 // ------------------- Build Tag & Favicon -------------------
-const BUILD = { num: 'v10.0.22', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
+const BUILD = { num: 'v10.0.46', date: new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'}) };
 (function(){
   document.getElementById('build').textContent = `Build ${BUILD.num} • ${BUILD.date}`;
   // Use provided G.png as favicon when available
@@ -244,8 +255,8 @@ function openGainChoice(maxCost, actor, source){
       over.classList.remove('show');
       game.interactionLock = false; updateUndoUI(); checkEndgameFlags(); render();
     };
-    el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.pageX, e.pageY));
-    el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.pageX, e.pageY));
+    el.addEventListener('mouseenter', (e)=> { const tip = cardTip(def) + `<div class=\"tcount\"><div class=\"tcount\">Remaining: ${getSupplyRemaining(def)}</div></div>`; showTip(tip, e.pageX, e.pageY); });
+    el.addEventListener('mousemove',  (e)=> { const tip = cardTip(def) + `<div class=\"tcount\"><div class=\"tcount\">Remaining: ${getSupplyRemaining(def)}</div></div>`; showTip(tip, e.pageX, e.pageY); });
     el.addEventListener('mouseleave', hideTip);
     grid.appendChild(el);
   });
@@ -283,18 +294,13 @@ function render(){
         const def = CARD_DEFS[pile.key];
         const el = document.createElement('div'); el.className='pile'; if(pile.count===0) el.classList.add('empty');
         el.innerHTML = `
-          <div class=\"count\">${pile.count}</div>
-          <div class=\"name\">
-            <div class=\"icon\">${cardIcon(def.name)}</div>
-            <div class=\"label\">${def.name}</div>
-          </div>
-          
+          <div class=\"nameRow\">${cardIcon(def.name)} <span class=\"label\">${def.name}</span></div>
         `;
         const canBuy = (!game.gameOver && !game.interactionLock && game.turn==='player' && game.phase==='buy' && game.buys>0 && game.coins>=def.cost && pile.count>0);
         if(canBuy){ el.onclick = ()=>buy(def.name); el.classList.remove('disabled'); el.classList.add('buyable'); }
         else { el.classList.add('disabled'); el.classList.remove('buyable'); el.onclick = null; }
-        el.addEventListener('mouseenter', (e)=> showTip(cardTip(def), e.pageX, e.pageY));
-        el.addEventListener('mousemove',  (e)=> showTip(cardTip(def), e.pageX, e.pageY));
+        el.addEventListener('mouseenter', (e)=> { const tip = cardTip(def) + `<div class=\"tcount\"><div class=\"tcount\">Remaining: ${getSupplyRemaining(def)}</div></div>`; showTip(tip, e.pageX, e.pageY); });
+        el.addEventListener('mousemove',  (e)=> { const tip = cardTip(def) + `<div class=\"tcount\"><div class=\"tcount\">Remaining: ${getSupplyRemaining(def)}</div></div>`; showTip(tip, e.pageX, e.pageY); });
         el.addEventListener('mouseleave', hideTip);
         grid.appendChild(el);
       });
@@ -386,50 +392,54 @@ if(typeof init==='function'){
   else{init();}
 }
 
-function bindCardHover(){
-  try{
+function bindCardHover(){ /* v10.0.27: disabled; using delegated hover */ }
 
-    if(!tooltipEl) return;
-    // Move tooltip with the mouse
-    document.addEventListener('mousemove', function(e){
-      if(tooltipEl.style.display==='block'){
-        tooltipEl.style.left = (e.pageX + 12) + 'px';
-        tooltipEl.style.top  = (e.pageY + 12) + 'px';
+function bindDelegatedHover(){
+  if (bindDelegatedHover._bound) return; bindDelegatedHover._bound = true;
+  const root = document;
+  const getCard = (el)=> el && el.closest ? el.closest('.card') : null;
+  root.addEventListener('mouseover', function(ev){
+    const card = getCard(ev.target);
+    if(!card) return;
+    if(card.closest && card.closest('#player-hand')){ try{ if (typeof hideTip==='function') hideTip(); }catch(e){} return; }
+    try{
+      const key = card.dataset.key || card.dataset.card || card.dataset.name || card.getAttribute('data-key') || card.getAttribute('data-name');
+      const def = (typeof CARD_DEFS!=='undefined' && key) ? CARD_DEFS[key] : null;
+      if(def && typeof showTip==='function'){
+        let tip = cardTip(def);
+      const cnt = getSupplyCount(def.key);
+      if (cnt !== '' && tip.indexOf('tcount') === -1) {
+        tip = tip.replace('</div></div>', `<div class="tcount">Remaining: ${cnt}</div></div>`);
       }
-    }, {passive:true});
-    // Bind to all .card nodes currently in DOM
-    document.querySelectorAll('.card').forEach(function(el){
-      if (el.closest && (el.closest('#player-hand') || el.id==='player-hand')) { el.dataset.hoverBound='1'; return; } if (el.closest && el.closest('#player-hand')) { el.dataset.hoverBound='1'; return; } if(el.dataset.hoverBound) return; if(el.closest('#player-hand')) { return; } el.addEventListener('mouseenter', function(ev){
-        const key = el.getAttribute('data-key') || el.getAttribute('data-card') || el.id || '';
-        const def = (typeof CARD_DEFS!=='undefined') && (CARD_DEFS[key] || CARD_DEFS[(key||'').replace(/-pile$/,'')]);
-        if(def){ const html = cardTip(def); showTip(html, ev.pageX+12, ev.pageY+12); }
-      });
-      el.addEventListener('mouseleave', function(){ hideTip(); });
-      // Touch support (iOS Safari)
-      el.addEventListener('touchstart', function(ev){
-        const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-        const key = el.getAttribute('data-key') || el.getAttribute('data-card') || el.id || '';
-        const def = (typeof CARD_DEFS!=='undefined') && (CARD_DEFS[key] || CARD_DEFS[(key||'').replace(/-pile$/,'')]);
-        if(def){ const html = cardTip(def); showTip(html, (t.pageX||0)+12, (t.pageY||0)+12); }
-      }, {passive:true});
-      el.addEventListener('touchend', function(){ hideTip(); }, {passive:true});
-      el.addEventListener('touchcancel', function(){ hideTip(); }, {passive:true});
-      el.dataset.hoverBound = '1';
-    });
-  }catch(_e){ /* no-op */ }
+        showTip(tip, ev.pageX, ev.pageY);
+      }
+    }catch(e){}
+  }, true);
+  root.addEventListener('mousemove', function(ev){
+    const card = getCard(ev.target);
+    if(!card) return;
+    if(card.closest && card.closest('#player-hand')){ try{ if (typeof hideTip==='function') hideTip(); }catch(e){} return; }
+    try{
+      if(typeof showTip==='function'){ showTip(null, ev.pageX, ev.pageY); }
+    }catch(e){}
+  }, true);
+  root.addEventListener('mouseout', function(ev){
+    try{ if(typeof hideTip==='function') hideTip(); }catch(e){}
+  }, true);
+}
+document.addEventListener('DOMContentLoaded', bindDelegatedHover);
+
+// v10.0.28 supply count helper
+function getSupplyCount(key){
+  try{
+    if (typeof SUPPLY==='undefined') return '';
+    const p = SUPPLY.find(x=> x.key===key);
+    return p ? (p.count||0) : '';
+  }catch(e){ return ''; }
 }
 
-// v10.0.22: Hard-disable hover/tooltips in player's hand
-document.addEventListener('DOMContentLoaded', function(){
-  const hand = document.getElementById('player-hand');
-  if(hand){
-    hand.querySelectorAll('[title]').forEach(n=> n.removeAttribute('title'));
-    hand.addEventListener('mouseenter', function(){ try{ hideTip && hideTip(); }catch(e){} }, true);
-    hand.addEventListener('mousemove', function(){ try{ hideTip && hideTip(); }catch(e){} }, true);
-  }
-});
 
-// v10.0.22 chat minimize toggle
+// v10.0.29 chat minimize toggle
 function toggleChatMin(){
   const panel = document.getElementById('chatPanel');
   if(!panel) return;
@@ -438,4 +448,46 @@ function toggleChatMin(){
 document.addEventListener('DOMContentLoaded', function(){
   const b = document.getElementById('chatMinBtn');
   if(b){ b.addEventListener('click', toggleChatMin); }
+});
+
+
+
+// v10.0.45: hard-suppress legacy tooltips on control buttons
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    var ids = [
+      'goToBuyBtn','gotoBuyBtn','buyPhaseBtn',
+      'autoTreasureBtn','autoPlayBtn','playAllTreasuresBtn',
+      'undoBtn','undoLastBtn',
+      'endTurnBtn','endBtn'
+    ];
+    ids.forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el) return;
+      // Remove any built-in tooltip attributes that might show old shortcut letters
+      ['title','aria-label','data-tooltip'].forEach(function(a){ if(el.hasAttribute(a)) el.removeAttribute(a); });
+      // Prevent any hover tooltip from delegated handlers
+      function kill(ev){ try{ if(typeof hideTip==='function') hideTip(); }catch(_){ } ev.stopPropagation(); ev.stopImmediatePropagation && ev.stopImmediatePropagation(); }
+      ['mouseenter','mouseover','mousemove','pointermove','touchstart','focus'].forEach(function(ev){ el.addEventListener(ev, kill, true); });
+      el.dataset.noTip = "1";
+    });
+  }catch(_){ /* no-op */ }
+});
+
+
+// v10.0.46: runtime version/title sync guard
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    var ver = (typeof BUILD!=='undefined' && BUILD.num) ? BUILD.num : 'v10.0.46';
+    var m = document.title.match(/v\d+\.\d+\.\d+/);
+    var titleVer = m && m[0];
+    if (titleVer !== ver){
+      console.warn('[version] Title mismatch: title=%s build=%s — fixing.', titleVer, ver);
+      if (titleVer){
+        document.title = document.title.replace(/v\d+\.\d+\.\d+/, ver);
+      } else {
+        document.title = document.title + ' (' + ver + ')';
+      }
+    }
+  }catch(e){}
 });

@@ -208,20 +208,52 @@ button, .btn, .card, .pile, .pill { -webkit-user-select: none; user-select: none
 
 #playerCounts .countsList{ margin-top:0; gap:2px; }
 
-/* v10.0.22 Your Cards spacing & font */
-#playerCounts .countsList { margin-top: 0; padding-top: 0; }
-#playerCounts .countsList .row { font-size:14px; line-height:1.05; margin:0 0 2px 0; }
+/* v10.0.27 font token */
+:root{ --status-font: 14px; }
 
-/* v10.0.22 supply card shrink */
+/* v10.0.27 unify fonts */
+#playerCounts .countsList .row{ font-size: var(--status-font); line-height:1.05; }
+
+/* v10.0.27 Supply shrink (real) */
 #supply .card, .supply .card, .piles .card{
-  height: auto;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding-top: 2px; padding-bottom: 2px;
+  line-height: 1.05;
+  font-size: 0.88em;         /* ~12% smaller text */
 }
-#supply .card .art, .supply .card .art, .piles .card .art{ max-height: 70%; }
-#supply .card .name, .supply .card .name, .piles .card .name{ margin-bottom: 2px; line-height: 1.0; }
+#supply .card .name, .supply .card .name, .piles .card .name{
+  margin: 0 0 2px 0; line-height:1.0;
+}
+#supply .card .meta, .supply .card .meta, .piles .card .meta{
+  margin-top: 2px;
+}
+#supply .card .art, .supply .card .art, .piles .card .art{
+  max-height: 56%;           /* reduce art block height */
+}
 
-/* v10.0.22 chat minimize */
-#chatPanel.minimized{ height: 28px; overflow: hidden; }
-#chatPanel.minimized #chatLog, #chatPanel.minimized #chatInputRow{ display:none; }
+/* v10.0.28 Supply: hide inline counts and compress */
+#supply .card .count, #supply .card .pile-count, #supply .card .badge,
+#supply .card .pill.count, .supply .card .count, .piles .card .count{ display:none !important; }
+#supply .card .header, .supply .card .header{ display:flex; align-items:center; gap:6px; }
+#supply .card .icon{ margin-right:6px; }
+#supply .card, .supply .card, .piles .card{ padding-top: 1px; padding-bottom: 1px; line-height:1.0; font-size:0.85em; }
+#supply .card .art, .supply .card .art, .piles .card .art{ max-height: 52%; }
+
+/* v10.0.28 Panel spacing tighten */
+#supplyPanel + #statusPanel, #supply + #status{ margin-top: 4px !important; }
+.panel{ margin-bottom: 6px; }
+
+/* v10.0.29 chat minimize */
+#chatPanel.minimized{ height: 28px; overflow:hidden; }
+#chatPanel.minimized .chat-body{ display:none; }
 #chatMinBtn{ font-size:12px; padding:2px 8px; }
+
+/* v10.0.29 Supply tiles: inline name row, hide counts */
+#supply .pile .nameRow{ display:flex; align-items:center; gap:6px; line-height:1.0; }
+#supply .pile .label{ white-space:nowrap; }
+#supply .pile .count{ display:none !important; }
+
+/* v10.0.29 tighten supply→status gap */
+#supply + #status, #supplyPanel + #statusPanel{ margin-top: 4px !important; }
+
+/* v10.0.44 tooltip color */
+.tcount{ color:#38BDF8; font-weight:600; }
