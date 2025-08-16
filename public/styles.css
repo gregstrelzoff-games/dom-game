@@ -1,0 +1,78 @@
+
+/* Base styles use CSS vars; your game CSS can override anything via /game-theme.css */
+* { box-sizing: border-box; }
+:root { --btn-radius: 14px; }
+
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  margin: 0; padding: 0; background: var(--bg); color: var(--text);
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.container.narrow { max-width: 560px; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h1 { font-size: 24px; margin: 8px 0 12px; }
+h2 { font-size: 20px; margin: 24px 0 8px; }
+.muted { font-weight: normal; font-size: 14px; opacity: 0.8; color: var(--muted); }
+
+nav { display: flex; gap: 10px; align-items: center; }
+nav a { padding: 6px 10px; border-radius: 8px; }
+nav a:hover { background: var(--surface-alt); }
+.brand { display: flex; gap: 10px; align-items: center; }
+
+label { display: block; margin: 12px 0; }
+input {
+  width: 100%; padding: 10px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+
+/* Button system */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 14px; border-radius: var(--btn-radius);
+  border: 1px solid var(--border); cursor: pointer; text-decoration: none;
+  transition: transform .06s ease, box-shadow .15s ease, background .2s ease, border-color .2s ease;
+  user-select: none;
+}
+.btn:focus { outline: none; }
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  color: var(--accent-contrast);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent), white 10%), var(--accent));
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+}
+.btn-primary:hover { filter: brightness(1.05); box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+.btn-secondary { color: var(--text); background: var(--surface-alt); }
+.btn-ghost { color: var(--accent); background: transparent; border-color: color-mix(in oklab, var(--accent), black 50%); }
+.btn.small { padding: 6px 10px; font-size: 12px; border-radius: calc(var(--btn-radius) - 4px); }
+button.link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; }
+
+/* Layout blocks */
+.hero { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin: 16px 0; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+.card h3 { margin: 8px 0 6px; }
+.card p { margin: 0 0 10px; }
+
+/* Steps & panels */
+.steps { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 10px 0 18px; }
+.step { text-align: center; padding: 8px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); opacity: .8; }
+.step.active { opacity: 1; border-color: var(--accent); }
+.panel { background: var(--surface); padding: 16px; border-radius: 12px; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.success { background: var(--surface); padding: 16px; border-radius: 12px; }
+.devlink { margin-top: 8px; font-size: 12px; opacity: .9; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+th { background: var(--bg); position: sticky; top: 0; }
+tr:hover { background: var(--surface-alt); }
+.email { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hidden { display: none; }
+.empty { padding: 12px; }
+
+.mail { border: 1px solid var(--border); border-radius: 12px; margin: 10px 0; padding: 8px; background: var(--surface-alt); }
+.mail .mailhead { margin-bottom: 6px; font-size: 13px; }
+.mail .mailbody a { color: var(--accent); }

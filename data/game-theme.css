@@ -1,0 +1,107 @@
+:root{
+  /* Royal blue + gold palette */
+  --bg:#0b1222;             /* deep navy */
+  --surface:#121b33;        /* panel */
+  --surface-alt:#0e172e;    /* hover */
+  --text:#f6f7fb;
+  --muted:rgba(246,247,251,.75);
+  --border:#223055;
+  --accent:#d4af37;         /* gold */
+  --accent-contrast:#0a0f1f;
+  --btn-radius:18px;
+}
+
+/* Background vibe */
+body{
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(212,175,55,.08), transparent 60%),
+    radial-gradient(1000px 500px at 110% 0%, rgba(212,175,55,.05), transparent 60%),
+    linear-gradient(180deg, #0b1222, #091022);
+}
+
+/* Header + brand */
+header{
+  padding: 14px;
+  border: 1px solid color-mix(in oklab, var(--accent), black 60%);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.15));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.35);
+}
+.brand h1{
+  font-variant: small-caps;
+  letter-spacing: .5px;
+}
+
+/* Cards with framed look */
+.card, .panel, .hero, table{
+  border: 1px solid color-mix(in oklab, var(--accent), black 70%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.0)),
+    var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    0 12px 30px rgba(0,0,0,.40);
+}
+.card{
+  border-radius: 18px;
+}
+.card h3{ color: var(--text); }
+.card p{ color: var(--muted); }
+
+/* Table header accent */
+th{
+  background: linear-gradient(180deg, rgba(212,175,55,.12), rgba(0,0,0,.15));
+  border-bottom: 1px solid color-mix(in oklab, var(--accent), black 60%);
+}
+
+/* Step pills */
+.step{
+  border-color: color-mix(in oklab, var(--accent), black 65%);
+  background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.2));
+}
+.step.active{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), white 10%) inset;
+}
+
+/* Gold buttons with bevel */
+.btn{
+  border: 1px solid color-mix(in oklab, var(--accent), black 50%);
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+}
+.btn-primary{
+  color: #1a1200;
+  background:
+    radial-gradient(120% 180% at 50% -80%, rgba(255,255,255,.45), transparent 55%),
+    linear-gradient(180deg, #f7d77a, #d4af37 55%, #b88a00);
+  border-color: #9a7720;
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+.btn-primary:hover{ filter: brightness(1.04); box-shadow: 0 12px 32px rgba(0,0,0,.45); }
+.btn-secondary{
+  color: var(--text);
+  background: linear-gradient(180deg, #1a2747, #101a36);
+  border-color:#2a3a63;
+}
+.btn-ghost{
+  color: var(--accent);
+  background: transparent;
+  border-color: color-mix(in oklab, var(--accent), black 60%);
+}
+
+/* Inputs */
+input{
+  background: #0f1730;
+  border-color: color-mix(in oklab, var(--accent), black 70%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.4);
+}
+
+/* Links */
+a{ color: color-mix(in oklab, var(--accent), white 20%); }
+a:hover{ text-decoration: none; filter: brightness(1.08); }
+
+/* Mail preview in admin */
+.mail{
+  background: linear-gradient(180deg, rgba(212,175,55,.04), rgba(0,0,0,.1));
+}
+.mail .mailhead strong{ color: color-mix(in oklab, var(--accent), white 10%); }

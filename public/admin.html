@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin · Users v1.1.0</title>
+  <link rel="stylesheet" href="/theme.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/game-theme.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Admin · Users <span id="ver" class="muted"></span></h1>
+      <div class="token">
+        <input id="token" placeholder="Admin token" />
+        <button id="saveToken" class="btn btn-secondary">Use token</button>
+      </div>
+    </header>
+
+    <section class="controls">
+      <input id="search" placeholder="Search email or screen name" />
+      <button id="refresh" class="btn btn-secondary">Refresh</button>
+      <button id="outbox" class="btn btn-secondary">View outbox</button>
+    </section>
+
+    <section>
+      <table id="users">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Screen</th>
+            <th>Created</th>
+            <th>Last login</th>
+            <th>Login count</th>
+            <th>Verified</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="empty" class="empty hidden">No users found</div>
+    </section>
+
+    <section id="detail" class="hidden">
+      <h2 id="detailTitle">Login history</h2>
+      <table id="events">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Success</th>
+            <th>Method</th>
+            <th>IP</th>
+            <th>User Agent</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="outboxPanel" class="hidden">
+      <h2>Outbox</h2>
+      <div id="emails"></div>
+    </section>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

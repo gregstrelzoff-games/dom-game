@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Log in · v1.1.0</title>
+  <link rel="stylesheet" href="/theme.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/game-theme.css" />
+</head>
+<body>
+  <div class="container narrow">
+    <header><h1>Log in</h1><div id="ver" class="muted"></div></header>
+    <form id="form">
+      <label>Email <input id="email" type="email" required /></label>
+      <label>Password <input id="password" type="password" required /></label>
+      <div class="actions">
+        <a href="/forgot" class="btn btn-ghost">Forgot password?</a>
+        <button type="submit" class="btn btn-primary">Log in</button>
+      </div>
+    </form>
+    <div id="status" class="muted"></div>
+  </div>
+  <script>
+    (async () => {
+      try{
+        const { version } = await fetch('/api/version').then(r=>r.json());
+        document.getElementById('ver').textContent = 'v' + version;
+      }catch{}
+    })();
+    const $ = s => document.querySelector(s);
+    $("#form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try{
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ email: $("#email").value.trim(), password: $("#password").value })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || "Login failed");
+        location.href = "/";
+      }catch(err){
+        $("#status").textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

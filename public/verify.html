@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verify email · v1.1.0</title>
+  <link rel="stylesheet" href="/theme.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/game-theme.css" />
+</head>
+<body>
+  <div class="container narrow">
+    <h1>Verifying your email…</h1>
+    <div id="status" class="muted">Please wait</div>
+    <div id="dev" class="devlink hidden"></div>
+  </div>
+  <script>
+    async function go(){
+      const params = new URLSearchParams(location.search);
+      const token = params.get("token");
+      const status = document.getElementById("status");
+      if(!token){ status.textContent = "Missing token."; return; }
+      try{
+        const res = await fetch("/api/auth/verify", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || "Verification failed");
+        status.textContent = "Email confirmed. We've sent you a link to set your password.";
+        if (data.dev_set_password_link) {
+          const d = document.getElementById("dev");
+          d.classList.remove("hidden");
+          d.innerHTML = `<p><strong>Dev only:</strong> <a href="${data.dev_set_password_link}">${data.dev_set_password_link}</a></p>`;
+        }
+      }catch(e){
+        status.textContent = e.message;
+      }
+    }
+    go();
+  </script>
+</body>
+</html>
