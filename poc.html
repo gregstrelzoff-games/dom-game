@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dominion POC — Player vs AI (v10.0.100)</title>
+<link href="styles/base.css" rel="stylesheet"/>
+<link href="G.png" rel="icon"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="telephone=no" name="format-detection"/>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+<div class="top-left">
+<h1>Dominion — POC (You vs AI)</h1>
+<div class="control-line"><label class="pill toggle"><input id="autoAdvance" type="checkbox"/> Auto-advance phases</label></div>
+<div class="control-line"><label class="pill toggle"><input id="debugAICheck" type="checkbox"/> Watch the AI</label></div>
+<div class="control-line">
+<label class="pill toggle">AI:
+            <select id="aiMode">
+<option value="weak">Weak</option>
+<option selected="" value="strong">Strong</option>
+</select>
+</label>
+</div>
+</div>
+<div class="topbar-right">
+<button class="btn" id="newGameBtn">New Game</button>
+<button class="btn" id="tutorialBtn" title="Show the tutorial">Tutorial</button>
+<div class="sound-controls">
+<span>🔊</span>
+<input id="vol" max="100" min="0" step="1" type="range">
+<label class="toggle" style="margin-left:auto"><input id="muteToggle" type="checkbox"/> Mute</label>
+</input></div>
+</div>
+</div>
+<div class="row">
+<div class="panel">
+<h2>Supply</h2>
+<div class="supplySections" id="supply"></div>
+</div>
+<div class="panel">
+<h2>AI Status &amp; Log</h2>
+<div class="log" id="ai-status">Waiting for your turn…</div>
+<div class="log mono" id="ai-debug" style="display:none"></div>
+<div class="log mono" id="log">Action &gt; Treasure &gt; Buy. Once you buy, you can't play more cards this turn.</div>
+</div>
+</div>
+<div class="row" style="margin-top:16px">
+<div class="panel">
+<h2>Game Status</h2>
+<div class="stats-rows">
+<div class="stats">
+<span class="pill score"><span class="score-label">Score:</span> <span style="opacity:.9">You</span> <strong id="pScore">0</strong> · AI <strong id="aScore">0</strong></span>
+</div>
+<div class="stats">
+<span class="pill">Phase: <strong id="phase">Action</strong></span>
+</div>
+<div class="stats">
+<span class="pill">Actions: <strong id="actions">1</strong></span>
+<span class="pill">Buys: <strong id="buys">1</strong></span>
+<span class="pill">Coins: <strong id="coins">0</strong></span>
+</div>
+</div>
+</div>
+<div class="panel">
+<h2>Your Cards</h2>
+<div class="countsList" id="playerCounts"></div>
+<div class="deck-counts" id="deckCounts"></div>
+</div>
+</div>
+<div class="panel playArea" style="margin-top:16px">
+<h2>Your Hand</h2>
+<div class="hand" id="player-hand"></div>
+<div class="actions" style="display:flex;gap:10px;align-items:center;padding:0 12px 12px;flex-wrap:wrap">
+<button class="btn" id="toBuyBtn" style="width:auto">Go to Buy Phase</button>
+<button class="btn" id="autoTreasureBtn" style="width:auto">Auto-Play Treasures</button>
+<button class="btn" id="undoBtn" style="width:auto">Undo last</button>
+<button class="btn" id="endTurnBtn" style="width:auto">End Turn</button>
+</div>
+</div>
+<div class="chat-panel" id="chatPanel">
+<div class="chat-head"><button class="pill small" id="chatMinBtn" style="margin-right:8px">–</button><span class="title">Table Talk</span><div class="tools"><button class="btn" id="clearChat" style="width:auto" title="Clear chat">🧹</button></div></div>
+<div class="chat-body" id="chatBody"></div>
+<div class="chat-input"><input id="chatInput" placeholder="Say something…"><button id="chatSend">Send</button></input></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="build" id="build">v10.0.100</div>
+<div class="overlay" id="overlay">
+<div class="modal" id="modal">
+<h3 id="winnerTitle">Game Over</h3>
+<p id="winnerDetail"></p>
+<div class="footer"><button class="btn" onclick="location.reload()" style="width:auto">New Game</button></div>
+</div>
+</div>
+<div class="overlay" id="choiceOverlay">
+<div class="modal" id="choiceModal">
+<h3 id="choiceTitle">Gain a card</h3>
+<p id="choiceDetail">Pick a card.</p>
+<div class="supplyGrid" id="choiceGrid"></div>
+</div>
+</div>
+<div class="overlay coach" id="coach" style="background:rgba(2,6,23,.45)">
+<div class="modal step" id="coachStep" style="left:40px;top:40px;min-width:300px">
+<div class="title" id="coachTitle" style="font-weight:800;margin-bottom:4px;color:#fff">Welcome!</div>
+<div id="coachText" style="color:#D1D5DB">Let’s do a quick tour.</div>
+<div class="controls" style="display:flex;gap:8px;margin-top:10px">
+<button class="btn" id="coachSkip" style="width:auto">Skip</button>
+<button class="btn" id="coachNext" style="width:auto">Next →</button>
+</div>
+</div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<script src="assets/poc-game.js"></script>
+<script src="assets/main.js"></script>
+</body>
+</html>
