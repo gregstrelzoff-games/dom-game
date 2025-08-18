@@ -182,7 +182,6 @@
       <p>Thanks for coming and please send me feedback!</p>
     </section>
 
-    <!-- HOME -->
     <section id="home" class="view active">
       <div class="hero">
         <h2>Welcome!</h2>
@@ -212,7 +211,6 @@
       </div>
     </section>
 
-    <!-- SIGNUP (guided) -->
     <section id="signup" class="view">
       <div class="container narrow" style="padding:0">
         <header style="margin-top:12px"><h2>Create your account</h2><div class="muted">UI preview — not wired</div></header>
@@ -249,7 +247,6 @@
       </div>
     </section>
 
-    <!-- ADMIN (preview table) -->
     <section id="admin" class="view">
       <div class="hero">
         <h2>Admin · Users <span class="muted">(UI preview)</span></h2>
@@ -271,213 +268,3 @@
                 <td>bob@example.com</td><td>Bob</td><td>riverstone</td><td>2025‑07‑02</td><td>2025‑08‑10</td><td>7</td><td>No</td>
                 <td><button class="btn small btn-primary">SEND RESET</button></td>
               </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  </div>
-<footer class="site-footer">
-  <div class="foot">
-    <a id="emailLink" href="#contact" data-u="strelzoffgreg" data-d="gmail.com">Email</a>
-  </div>
-</footer>
-  <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    var el = document.getElementById('emailLink');
-    if (!el) return;
-    var addr = 'strelzoffgreg' + '@' + 'gmail.com';
-    el.setAttribute('href', 'mailto:' + addr);
-    el.setAttribute('rel','nofollow');
-  });
-</script>
-
-  <script>
-    function show(id){
-      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      document.querySelectorAll('.tabs a').forEach(a=>{
-        if(a.dataset.tab===id){ a.setAttribute('aria-current','page'); }
-        else { a.removeAttribute('aria-current'); }
-      });
-    }
-    function stepTo(n){
-      document.querySelectorAll('.step').forEach(s=>s.classList.toggle('active', s.dataset.step==n));
-      document.querySelectorAll('[data-step]').forEach(p=>{
-        if(p.classList.contains('panel')) p.classList.toggle('hidden', p.dataset.step!=n);
-      })
-    }
-    function fakeSubmit(){
-      document.getElementById('form').classList.add('hidden');
-      document.getElementById('success').classList.remove('hidden');
-    }
-  </script>
-  <script>
-    // Starfield with theme presets (live background colorways)
-    (function(){
-      const c = document.getElementById('starfield');
-      if(!c) return; const ctx = c.getContext('2d');
-      let DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      let stars = [], streaks = []; let W=0, H=0;
-
-      // THEME DEFINITIONS
-      const THEMES = {
-        warm: {
-          label:'Warm Glow',
-          bg: 'radial-gradient(900px 600px at 12% 18%, rgba(255,196,99,.16), transparent 60%),\
-              radial-gradient(1100px 700px at 88% 12%, rgba(240,99,132,.12), transparent 60%),\
-              radial-gradient(1200px 800px at 50% 120%, rgba(255,140,66,.14), transparent 60%),\
-              linear-gradient(180deg, #0b0a0f, #120e14)',
-          hueRanges:[{start:30,end:55,weight:.6,lum:94},{start:320,end:355,weight:.3,lum:95},{start:190,end:220,weight:.1,lum:96}],
-          map:[{start:30,end:55},{start:320,end:355}]
-        },
-        cool: {
-          label:'Cool Blue',
-          bg: 'radial-gradient(900px 600px at 15% 20%, rgba(96,165,250,.16), transparent 60%),\
-              radial-gradient(1100px 700px at 85% 15%, rgba(14,165,233,.12), transparent 60%),\
-              radial-gradient(1200px 800px at 50% 120%, rgba(59,130,246,.14), transparent 60%),\
-              linear-gradient(180deg, #061018, #081420)',
-          hueRanges:[{start:200,end:230,weight:.7,lum:95},{start:180,end:200,weight:.2,lum:94},{start:280,end:300,weight:.1,lum:94}],
-          map:[{start:200,end:230}]
-        },
-        aurora: {
-          label:'Aurora',
-          bg: 'radial-gradient(900px 600px at 20% 15%, rgba(34,197,94,.14), transparent 60%),\
-              radial-gradient(1100px 700px at 80% 12%, rgba(16,185,129,.12), transparent 60%),\
-              radial-gradient(1200px 800px at 50% 120%, rgba(52,211,153,.10), transparent 60%),\
-              linear-gradient(180deg, #07120d, #0a1612)',
-          hueRanges:[{start:140,end:170,weight:.55,lum:92},{start:170,end:195,weight:.35,lum:93},{start:250,end:270,weight:.10,lum:94}],
-          map:[{start:140,end:195}]
-        },
-        nebula: {
-          label:'Nebula',
-          bg: 'radial-gradient(900px 600px at 12% 18%, rgba(168,85,247,.16), transparent 60%),\
-              radial-gradient(1100px 700px at 88% 12%, rgba(236,72,153,.12), transparent 60%),\
-              radial-gradient(1200px 800px at 50% 120%, rgba(99,102,241,.12), transparent 60%),\
-              linear-gradient(180deg, #0a0812, #0e0b16)',
-          hueRanges:[{start:270,end:300,weight:.5,lum:94},{start:300,end:330,weight:.35,lum:95},{start:200,end:220,weight:.15,lum:95}],
-          map:[{start:270,end:330}]
-        },
-        sunset: {
-          label:'Sunset',
-          bg: 'radial-gradient(900px 600px at 12% 18%, rgba(251,146,60,.16), transparent 60%),\
-              radial-gradient(1100px 700px at 88% 12%, rgba(244,63,94,.12), transparent 60%),\
-              radial-gradient(1200px 800px at 50% 120%, rgba(234,179,8,.10), transparent 60%),\
-              linear-gradient(180deg, #100a0b, #140e12)',
-          hueRanges:[{start:15,end:45,weight:.6,lum:94},{start:330,end:355,weight:.3,lum:95},{start:190,end:210,weight:.1,lum:96}],
-          map:[{start:15,end:45},{start:330,end:355}]
-        },
-        cyber: {
-          label:'Cyber Neon',
-          bg: 'radial-gradient(900px 600px at 18% 22%, rgba(34,211,238,.16), transparent 60%),\
-              radial-gradient(1100px 700px at 82% 18%, rgba(244,63,94,.14), transparent 60%),\
-              radial-gradient(1200px 800px at 50% 120%, rgba(56,189,248,.10), transparent 60%),\
-              linear-gradient(180deg, #06070f, #080a14)',
-          hueRanges:[{start:180,end:200,weight:.5,lum:95},{start:300,end:330,weight:.4,lum:95},{start:210,end:220,weight:.1,lum:96}],
-          map:[{start:180,end:200},{start:300,end:330}]
-        },
-        mono: {
-          label:'Deep Space (Mono)',
-          bg: 'radial-gradient(900px 600px at 15% 20%, rgba(148,163,184,.12), transparent 60%),\
-              radial-gradient(1100px 700px at 85% 15%, rgba(100,116,139,.10), transparent 60%),\
-              linear-gradient(180deg, #0a0a0a, #0f1115)',
-          hueRanges:[{start:208,end:220,weight:1.0,lum:96}],
-          map:[{start:208,end:220}]
-        }
-      };
-      const THEME_BAR = { warm:'#120e14', cool:'#081420', aurora:'#0a1612', nebula:'#0e0b16', sunset:'#140e12', cyber:'#080a14', mono:'#0f1115' };
-      let currentTheme = 'warm';
-
-      // Controls
-      const picker = document.getElementById('themePicker');
-      if (picker) picker.addEventListener('change', e=> applyTheme(e.target.value));
-
-      function applyTheme(name){
-        currentTheme = THEMES[name] ? name : 'warm';
-        try { localStorage.setItem('theme', currentTheme); } catch(e){}
-        c.style.background = THEMES[currentTheme].bg;
-        var m=document.querySelector('meta[name="theme-color"]'); if(m){ m.setAttribute('content', (THEME_BAR[currentTheme]||'#0b0a0f')); }
-        resize(); // regenerate stars with new palette
-      }
-
-      function pickHueLum(){
-        const ranges = THEMES[currentTheme].hueRanges;
-        let r = Math.random(), acc = 0;
-        for (const R of ranges){ acc += R.weight; if (r <= acc){ const hue = R.start + Math.random()*(R.end-R.start); return [hue, R.lum]; } }
-        const last = ranges[ranges.length-1];
-        return [ last.start + Math.random()*(last.end-last.start), last.lum ];
-      }
-
-      // Mouse/touch interactive parallax + velocity streaks + warp on press
-      let mx = 0.5, my = 0.5, pmx = 0.5, pmy = 0.5, pvx = 0, pvy = 0;
-      let warp = false, warpFactor = 1;
-      const deg = r => r*180/Math.PI;
-      function hueFromAngle(ang){
-        const map = THEMES[currentTheme].map; const a = (deg(ang)+360)%360;
-        if (map.length === 1){ const m=map[0]; return m.start + (a/360)*(m.end-m.start); }
-        const half = a < 180 ? 0 : 1; const norm = a < 180 ? a/180 : (a-180)/180; const m = map[half];
-        return m.start + norm*(m.end-m.start);
-      }
-      function randomHue(){ const [h] = pickHueLum(); return h; }
-
-      window.addEventListener('mousemove', (e)=>{ pmx=mx; pmy=my; mx = e.clientX / innerWidth; my = e.clientY / innerHeight; pvx = mx-pmx; pvy = my-pmy; maybeSpawnVelocityStreak(); });
-      window.addEventListener('touchmove', (e)=>{ if(e.touches && e.touches[0]){ pmx=mx; pmy=my; mx = e.touches[0].clientX / innerWidth; my = e.touches[0].clientY / innerHeight; pvx=mx-pmx; pvy=my-pmy; maybeSpawnVelocityStreak(); } }, {passive:true});
-      window.addEventListener('mousedown', ()=>{ warp=true; warpFactor=2.2; burst(); });
-      window.addEventListener('mouseup',   ()=>{ warp=false; warpFactor=1;   });
-      window.addEventListener('touchstart',()=>{ warp=true; warpFactor=2.2; burst(); }, {passive:true});
-      window.addEventListener('touchend',  ()=>{ warp=false; warpFactor=1;   }, {passive:true});
-
-      function burst(){ for(let i=0;i<6;i++) spawnStreak(Math.random()*W, H*(0.3+Math.random()*0.4), -(4+Math.random()*4)*DPR, (0.8+Math.random()*2)*DPR, randomHue()); }
-      function maybeSpawnVelocityStreak(){ const speed = Math.hypot(pvx,pvy); if (speed > 0.01){ const ang = Math.atan2(pvy, pvx); const x = mx*W, y = my*H; const vx = Math.cos(ang) * 6 * DPR; const vy = Math.sin(ang) * 6 * DPR; spawnStreak(x, y, vx, vy, hueFromAngle(ang)); } }
-
-      function spawnStreak(x,y,vx,vy,h){ streaks.push({x,y,vx,vy,alpha:1,life:100,hue:(h==null?randomHue():h)}); if(streaks.length>24) streaks.shift(); }
-      function rand(a,b){return a+Math.random()*(b-a)}
-
-      const LAYERS = [
-        {speed: 0.08, size:[0.5,1.3], alpha:[0.45,0.95], parallax:0.6},
-        {speed: 0.16, size:[0.8,1.9], alpha:[0.55,1.00], parallax:1.1},
-        {speed: 0.34, size:[1.0,2.6], alpha:[0.65,1.00], parallax:1.8},
-      ];
-      const STAR_DENSITY = 0.0006; const MAX_STARS = 2400;
-
-      function resize(){
-        W = Math.floor(innerWidth * DPR);
-        H = Math.floor(innerHeight * DPR);
-        c.width = W; c.height = H; c.style.width = '100%'; c.style.height='100%';
-        const target = Math.floor(W*H*STAR_DENSITY/DPR);
-        const count = Math.min(target, MAX_STARS);
-        stars = [];
-        for (let i=0;i<count;i++){
-          const layer = LAYERS[i%LAYERS.length];
-          const [hue, lum] = pickHueLum();
-          stars.push({ x: Math.random()*W, y: Math.random()*H, r: rand(layer.size[0], layer.size[1]) * DPR, a: rand(layer.alpha[0], layer.alpha[1]), t: Math.random()*Math.PI*2, s: layer.speed * DPR, p: layer.parallax, hue, lum });
-        }
-      }
-
-      function step(){
-        ctx.clearRect(0,0,W,H);
-        const px = (mx - 0.5) * 38 * DPR; const py = (my - 0.5) * 26 * DPR;
-        ctx.globalCompositeOperation = 'lighter';
-        for (let i=0;i<stars.length;i++){
-          const st = stars[i]; const tw = 0.55 + 0.45*Math.sin(st.t); const alpha = Math.max(0.12, Math.min(1, st.a*tw));
-          ctx.fillStyle = `hsla(${st.hue}, 100%, ${st.lum}%, ${alpha})`;
-          ctx.beginPath(); ctx.arc(st.x + px*st.p, st.y + py*st.p, st.r, 0, Math.PI*2); ctx.fill();
-          st.y -= st.s * (warp ? warpFactor : 1); st.t += 0.03 + st.s*0.01; if (st.y < -2) { st.y = H + 2; st.x = Math.random()*W; }
-        }
-        if (Math.random() < (warp ? 0.012 : 0.006)) { spawnStreak(Math.random()*W, H*(0.2+Math.random()*0.4), -(3 + Math.random()*4)*DPR, (1 + Math.random()*2)*DPR, randomHue()); }
-        for (let i=streaks.length-1; i>=0; i--){ const s = streaks[i]; ctx.strokeStyle = `hsla(${s.hue}, 100%, 80%, ${s.alpha*0.35})`; ctx.lineWidth = 4*DPR; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx*10, s.y - s.vy*10); ctx.stroke(); ctx.strokeStyle = `hsla(${s.hue}, 100%, 92%, ${s.alpha})`; ctx.lineWidth = 2*DPR; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx*8, s.y - s.vy*8); ctx.stroke(); s.x += s.vx; s.y += s.vy; s.alpha *= 0.983; s.life -= 1; if (s.alpha < 0.03 || s.life <= 0) { streaks.splice(i,1); } }
-        ctx.globalCompositeOperation = 'source-over';
-        requestAnimationFrame(step);
-      }
-
-      window.addEventListener('resize', resize);
-      // initialize
-      const saved = (function(){ try { return localStorage.getItem('theme'); } catch(e){ return null; } })();
-      const initial = (saved && THEMES[saved]) ? saved : ((document.getElementById('themePicker') && document.getElementById('themePicker').value) || 'warm');
-      if (picker) picker.value = initial;
-      applyTheme(initial);
-      requestAnimationFrame(step);
-    })();
-  </script>
-</body>
-</html>
