@@ -424,7 +424,6 @@
       function draw(){
         ctx.clearRect(0,0,W,H);
         
-        // Stars
         stars.forEach(s=>{
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.size/2, 0, Math.PI*2);
@@ -439,7 +438,6 @@
           }
         });
 
-        // Streaks
         streaks.forEach((s,i)=>{
           ctx.beginPath();
           const age = (Date.now() - s.birth) / 1000;
@@ -477,6 +475,22 @@
       // Init and event listeners
       window.addEventListener('resize', populate);
       document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) populate(); });
+      
+      // --- INTERACTIVITY ADDED HERE ---
+      c.addEventListener('mousedown', function(e) {
+          if (document.hidden) return;
+          const x = e.clientX;
+          const y = e.clientY;
+          const burstAmount = 15;
+
+          for (let i = 0; i < burstAmount; i++) {
+              const burstStar = makeStar();
+              burstStar.x = x;
+              burstStar.y = y;
+              burstStar.speed = random(0.001, 0.004); // Higher speed for burst effect
+              stars.push(burstStar);
+          }
+      });
       
       const picker = document.getElementById('themePicker');
       if(picker){
