@@ -7,9 +7,9 @@
   <meta name="theme-color" content="#120e14" id="themeColorMeta">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="./G-180.png">
-  <link rel="icon" type="image/png" sizes="48x48" href="./G-48.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="./G-32.png">
+  <link rel="apple-touch-icon" href="/G-180.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/G-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/G-32.png">
   <style>
     /* === THEME TOKENS (tweak to match game exactly) === */
     :root{
@@ -34,7 +34,7 @@
     /* === GLOBAL + ANIMATED BACKGROUND === */
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;overflow-x:hidden}
+    body{margin:0;background:transparent;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;overflow-x:hidden}
     a{color:var(--accent);text-decoration:none}
     a:hover{text-decoration:underline}
 
@@ -190,7 +190,7 @@
             <h3>Play vs AI</h3>
             <p>Try and beat my current build</p>
             <p class="muted">AI gets tougher every week 😈</p>
-            <a class="btn btn-primary" href="./poc.html">OPEN</a>
+            <a class="btn btn-primary" href="/poc.html">OPEN</a>
           </div>
           <div class="card">
             <h3>Play vs Player <span class="badge badge-soon"><span class="icon" aria-hidden="true">🔒</span> COMING SOON</span></h3>
@@ -268,3 +268,232 @@
                 <td>bob@example.com</td><td>Bob</td><td>riverstone</td><td>2025‑07‑02</td><td>2025‑08‑10</td><td>7</td><td>No</td>
                 <td><button class="btn small btn-primary">SEND RESET</button></td>
               </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+<footer class="site-footer">
+  <div class="foot">
+    <a id="emailLink" href="#contact" data-u="strelzoffgreg" data-d="gmail.com">Email</a>
+  </div>
+</footer>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var el = document.getElementById('emailLink');
+    if (!el) return;
+    var addr = 'strelzoffgreg' + '@' + 'gmail.com';
+    el.setAttribute('href', 'mailto:' + addr);
+    el.setAttribute('rel','nofollow');
+  });
+</script>
+
+  <script>
+    function show(id){
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.tabs a').forEach(a=>{
+        if(a.dataset.tab===id){ a.setAttribute('aria-current','page'); }
+        else { a.removeAttribute('aria-current'); }
+      });
+    }
+    function stepTo(n){
+      document.querySelectorAll('.step').forEach(s=>s.classList.toggle('active', s.dataset.step==n));
+      document.querySelectorAll('[data-step]').forEach(p=>{
+        if(p.classList.contains('panel')) p.classList.toggle('hidden', p.dataset.step!=n);
+      })
+    }
+    function fakeSubmit(){
+      document.getElementById('form').classList.add('hidden');
+      document.getElementById('success').classList.remove('hidden');
+    }
+  </script>
+  <script>
+    // Starfield with theme presets (live background colorways)
+    (function(){
+      const c = document.getElementById('starfield');
+      if(!c) return; const ctx = c.getContext('2d');
+      let DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      let stars = [], streaks = []; let W=0, H=0;
+
+      // THEME DEFINITIONS
+      const THEMES = {
+        warm: {
+          label:'Warm Glow',
+          bg: 'radial-gradient(900px 600px at 12% 18%, rgba(255,196,99,.16), transparent 60%),\
+              radial-gradient(1100px 700px at 88% 12%, rgba(240,99,132,.12), transparent 60%),\
+              radial-gradient(1200px 800px at 50% 120%, rgba(255,140,66,.14), transparent 60%),\
+              linear-gradient(180deg, #0b0a0f, #120e14)',
+          hueRanges:[{start:30,end:55,weight:.6,lum:94},{start:320,end:355,weight:.3,lum:95},{start:190,end:220,weight:.1,lum:96}],
+          map:[{start:30,end:55},{start:320,end:355}]
+        },
+        cool: {
+          label:'Cool Blue',
+          bg: 'radial-gradient(900px 600px at 15% 20%, rgba(96,165,250,.16), transparent 60%),\
+              radial-gradient(1100px 700px at 85% 15%, rgba(14,165,233,.12), transparent 60%),\
+              radial-gradient(1200px 800px at 50% 120%, rgba(59,130,246,.14), transparent 60%),\
+              linear-gradient(180deg, #061018, #081420)',
+          hueRanges:[{start:200,end:230,weight:.7,lum:95},{start:180,end:200,weight:.2,lum:94},{start:280,end:300,weight:.1,lum:94}],
+          map:[{start:200,end:230}]
+        },
+        aurora: {
+          label:'Aurora',
+          bg: 'radial-gradient(900px 600px at 20% 15%, rgba(34,197,94,.14), transparent 60%),\
+              radial-gradient(1100px 700px at 80% 12%, rgba(16,185,129,.12), transparent 60%),\
+              radial-gradient(1200px 800px at 50% 120%, rgba(52,211,153,.10), transparent 60%),\
+              linear-gradient(180deg, #07120d, #0a1612)',
+          hueRanges:[{start:140,end:170,weight:.55,lum:92},{start:170,end:195,weight:.35,lum:93},{start:250,end:270,weight:.10,lum:94}],
+          map:[{start:140,end:195}]
+        },
+        nebula: {
+          label:'Nebula',
+          bg: 'radial-gradient(900px 600px at 12% 18%, rgba(168,85,247,.16), transparent 60%),\
+              radial-gradient(1100px 700px at 88% 12%, rgba(236,72,153,.12), transparent 60%),\
+              radial-gradient(1200px 800px at 50% 120%, rgba(99,102,241,.12), transparent 60%),\
+              linear-gradient(180deg, #0a0812, #0e0b16)',
+          hueRanges:[{start:270,end:300,weight:.5,lum:94},{start:300,end:330,weight:.35,lum:95},{start:200,end:220,weight:.15,lum:95}],
+          map:[{start:270,end:330}]
+        },
+        sunset: {
+          label:'Sunset',
+          bg: 'radial-gradient(900px 600px at 12% 18%, rgba(251,146,60,.16), transparent 60%),\
+              radial-gradient(1100px 700px at 88% 12%, rgba(244,114,182,.12), transparent 60%),\
+              radial-gradient(1200px 800px at 50% 120%, rgba(239,68,68,.12), transparent 60%),\
+              linear-gradient(180deg, #140a0a, #1a0b0b)',
+          hueRanges:[{start:20,end:40,weight:.6,lum:94},{start:330,end:350,weight:.3,lum:95},{start:0,end:15,weight:.1,lum:95}],
+          map:[{start:0,end:40},{start:330,end:350}]
+        },
+        cyber: {
+          label:'Cyber Neon',
+          bg: 'radial-gradient(900px 600px at 15% 85%, rgba(20,184,166,.18), transparent 50%),\
+              radial-gradient(1100px 700px at 88% 12%, rgba(219,39,119,.15), transparent 50%),\
+              radial-gradient(1200px 800px at 90% 90%, rgba(59,130,246,.18), transparent 50%),\
+              linear-gradient(180deg, #020617, #030712)',
+          hueRanges:[{start:160,end:180,weight:.4,lum:95},{start:320,end:340,weight:.4,lum:96},{start:210,end:230,weight:.2,lum:95}],
+          map:[{start:160,end:180},{start:320,end:340},{start:210,end:230}]
+        },
+        mono: {
+          label:'Deep Space',
+          bg: 'linear-gradient(180deg, #0c0c0c, #121212)',
+          hueRanges:[{start:0,end:0,weight:1,lum:93}],
+          map:[{start:0,end:0}]
+        }
+      };
+
+      function random(min, max){ return Math.random()*(max-min)+min; }
+      function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+      function weightedPick(ranges){ const total=ranges.reduce((acc,r)=>acc+(r.weight||1),0); const roll=random(0,total); let cur=0; for(const r of ranges){ cur+=r.weight||1; if(roll<=cur) return r; } return ranges[0]; }
+
+      function reset(){
+        stars.length = 0;
+        streaks.length = 0;
+        DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        W = window.innerWidth; H = window.innerHeight;
+        c.width = W*DPR; c.height = H*DPR;
+        ctx.scale(DPR,DPR);
+      }
+
+      function makeStar(){
+        const hueRange = weightedPick(THEMES[currentTheme].hueRanges);
+        return {
+          x: random(-20, W+20),
+          y: random(-20, H+20),
+          hue: random(hueRange.start, hueRange.end),
+          lum: random(hueRange.lum-2, hueRange.lum+2),
+          size: random(1.2, 2.8),
+          speed: random(0.0001, 0.0003),
+          angle: random(0, Math.PI*2),
+          flicker: random(0.005, 0.02)
+        };
+      }
+      function makeStreak(){
+        const hueRange = pick(THEMES[currentTheme].map);
+        const y = random(H*0.1, H*0.9);
+        const speed = random(18, 28);
+        return {
+          x: -20, y: y,
+          vx: speed, vy: 0,
+          hue: random(hueRange.start, hueRange.end),
+          lum: 98,
+          len: speed*random(1.8,2.2),
+          birth: Date.now()
+        };
+      }
+
+      function draw(){
+        ctx.clearRect(0,0,W,H);
+        
+        // Stars
+        stars.forEach(s=>{
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size/2, 0, Math.PI*2);
+          const alpha = 0.4 + Math.sin(Date.now()*s.flicker)*0.35;
+          ctx.fillStyle = `hsla(${s.hue}, 100%, ${s.lum}%, ${alpha})`;
+          ctx.fill();
+          s.x += Math.cos(s.angle) * s.speed * W;
+          s.y += Math.sin(s.angle) * s.speed * H;
+          if (s.x < -10 || s.x > W+10 || s.y < -10 || s.y > H+10){
+            Object.assign(s, makeStar());
+            s.y = random(0,H); s.x=random(0,W);
+          }
+        });
+
+        // Streaks
+        streaks.forEach((s,i)=>{
+          ctx.beginPath();
+          const age = (Date.now() - s.birth) / 1000;
+          let alpha = 1.0 - (age/0.7);
+          if (alpha <= 0){ streaks.splice(i,1); return; }
+          alpha = Math.min(1, alpha*2.5);
+          const tailX = s.x - s.len;
+          const grad = ctx.createLinearGradient(s.x, s.y, tailX, s.y);
+          grad.addColorStop(0, `hsla(${s.hue},100%,${s.lum}%,${alpha})`);
+          grad.addColorStop(1, `hsla(${s.hue},100%,${s.lum}%,0)`);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.6;
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(tailX, s.y);
+          ctx.stroke();
+          s.x += s.vx;
+        });
+        
+        requestAnimationFrame(draw);
+      }
+
+      function populate(){
+        reset();
+        for(let i=0; i<Math.round(W*H*0.00018); i++) stars.push(makeStar());
+      }
+      
+      let currentTheme = 'warm';
+      function setTheme(name){
+        if(!THEMES[name]) return;
+        currentTheme = name;
+        c.style.background = THEMES[name].bg;
+        populate();
+      }
+
+      // Init and event listeners
+      window.addEventListener('resize', populate);
+      document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) populate(); });
+      
+      const picker = document.getElementById('themePicker');
+      if(picker){
+        picker.onchange = (e)=> setTheme(e.target.value);
+        picker.value = currentTheme;
+      }
+      
+      // Initial state
+      setTheme(currentTheme);
+      draw();
+      
+      // Occasional streak
+      setInterval(()=>{
+        if(document.hidden) return;
+        if(streaks.length < 3 && Math.random() < 0.25) streaks.push(makeStreak());
+      }, 750);
+    })();
+  </script>
+</body>
+</html>
