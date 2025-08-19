@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dominion POC — Player vs AI (v10.0.100)</title>
+<title>Dominion POC — Player vs AI (v10.0.104)</title>
 <link href="styles/base.css" rel="stylesheet"/>
 <link href="G.png" rel="icon"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
@@ -54,6 +54,9 @@
 <div class="stats-rows">
 <div class="stats">
 <span class="pill score"><span class="score-label">Score:</span> <span style="opacity:.9">You</span> <strong id="pScore">0</strong> · AI <strong id="aScore">0</strong></span>
+<span class="pill score" id="highScorePill" style="display: none;">
+<span class="score-label">High Score:</span> <strong id="highScore">0</strong>
+</span>
 </div>
 <div class="stats">
 <span class="pill">Phase: <strong id="phase">Action</strong></span>
@@ -87,12 +90,12 @@
 <div class="chat-input"><input id="chatInput" placeholder="Say something…"><button id="chatSend">Send</button></input></div>
 </div>
 <div class="toast" id="toast"></div>
-<div class="build" id="build">v10.0.100</div>
+<div class="build" id="build">v10.0.104</div>
 <div class="overlay" id="overlay">
 <div class="modal" id="modal">
 <h3 id="winnerTitle">Game Over</h3>
 <p id="winnerDetail"></p>
-<div class="footer"><button class="btn" onclick="location.reload()" style="width:auto">New Game</button></div>
+<div class="footer"><button class="btn" id="gameOverNewGameBtn" style="width:auto">New Game</button></div>
 </div>
 </div>
 <div class="overlay" id="choiceOverlay">
