@@ -316,6 +316,7 @@
       if(!c) return; const ctx = c.getContext('2d');
       let DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
       let stars = [], streaks = []; let W=0, H=0;
+      let paused = false;
 
       // THEME DEFINITIONS
       const THEMES = {
@@ -441,7 +442,11 @@
         W = Math.floor(innerWidth * DPR);
         H = Math.floor(innerHeight * DPR);
         c.width = W; c.height = H; c.style.width = '100%'; c.style.height='100%';
-        const target = Math.floor(W*H*STAR_DENSITY/DPR);
+        let target = Math.floor(W*H*STAR_DENSITY/DPR);
+        const mem = (navigator && typeof navigator.deviceMemory==='number') ? navigator.deviceMemory : 4;
+        if (mem <= 2) target = Math.floor(target * 0.65);
+        try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { target = Math.floor(target * 0.4); } } catch(e){}
+        if (document.hidden) target = Math.floor(target * 0.2);
         const count = Math.min(target, MAX_STARS);
         stars = [];
         for (let i=0;i<count;i++){
@@ -452,6 +457,7 @@
       }
 
       function step(){
+        if (paused) { requestAnimationFrame(step); return; }
         ctx.clearRect(0,0,W,H);
         const px = (mx - 0.5) * 38 * DPR; const py = (my - 0.5) * 26 * DPR;
         ctx.globalCompositeOperation = 'lighter';
@@ -468,6 +474,11 @@
       }
 
       window.addEventListener('resize', resize);
+      // Pause animation when tab is hidden to save CPU/GPU
+      document.addEventListener('visibilitychange', ()=>{ paused = document.hidden; });
+      // Respect prefers-reduced-motion
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) { paused = true; }
       // initialize
       const saved = (function(){ try { return localStorage.getItem('theme'); } catch(e){ return null; } })();
       const initial = (saved && THEMES[saved]) ? saved : ((document.getElementById('themePicker') && document.getElementById('themePicker').value) || 'warm');
