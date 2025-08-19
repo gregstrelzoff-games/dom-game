@@ -1,16 +1,17 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>index.html</title>
-  <meta name="theme-color" content="#120e14" id="themeColorMeta">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="/G-180.png">
-  <link rel="icon" type="image/png" sizes="48x48" href="/G-48.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/G-32.png">
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>index.html</title>
+<meta content="#120e14" id="themeColorMeta" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<link href="/G-180.png" rel="apple-touch-icon"/>
+<link href="/G-48.png" rel="icon" sizes="48x48" type="image/png"/>
+<link href="/G-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<style>
     /* === THEME TOKENS (tweak to match game exactly) === */
     :root{
       /* Electric blue “End Turn” gradient */
@@ -156,130 +157,124 @@
 </style>
 </head>
 <body>
-  <canvas id="starfield" aria-hidden="true"></canvas>
-  <div class="container">
-    <header>
-      <nav class="tabs">
-        <a href="#home" data-tab="home" aria-current="page"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1a1200" d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z"/></svg> Home</a>
-        <a href="#signup" data-tab="signup"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1a1200" d="M12 12a5 5 0 10-5-5 5 5 0 005 5zm-8 9v-1a7 7 0 0114 0v1z"/></svg> Sign up</a>
-        <a href="#admin" data-tab="admin"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1a1200" d="M19.14 12.94a7.07 7.07 0 00.06-1l2.08-1.6-2-3.46-2.5.5a7.1 7.1 0 00-.86-.5l-.38-2.54H10.5l-.38 2.54a7.1 7.1 0 00-.86.5l-2.5-.5-2 3.46 2.08 1.6a7.07 7.07 0 000 1L2.76 14.6l2 3.46 2.5-.5c.27.19.56.36.86.5l.38 2.54h4.04l.38-2.54c.3-.14.59-.31.86-.5l2.5.5 2-3.46zM12 15a3 3 0 113-3 3 3 0 01-3 3z"/></svg> Admin</a>
-      </nav>
-      <div class="theme-ctrl">Background:
-        <select id="themePicker" aria-label="Background">
-          <option value="warm" selected>Warm Glow</option>
-          <option value="cool">Cool Blue</option>
-          <option value="aurora">Aurora (Green/Teal)</option>
-          <option value="nebula">Nebula (Purple)</option>
-          <option value="sunset">Sunset (Orange/Pink)</option>
-          <option value="cyber">Cyber Neon</option>
-          <option value="mono">Deep Space (Mono)</option>
-        </select>
-      </div>
-    </header>
-    <section class="notice" role="status" aria-live="polite">
-      <div class="hdr"><span>Welcome to the alpha of my PoC</span></div>
-      <p>Many links probably do not work and the single player game vs AI is being updated at random times.</p>
-      <p>Thanks for coming and please send me feedback!</p>
-    </section>
-
-    <section id="home" class="view active">
-      <div class="hero">
-        <h2>Welcome!</h2>
-                <div class="row">
-          <div class="card">
-            <h3>Play vs AI</h3>
-            <p>Try and beat my current build</p>
-            <p class="muted">AI gets tougher every week 😈</p>
-            <a class="btn btn-primary" href="/poc.html">OPEN</a>
-          </div>
-          <div class="card">
-            <h3>Play vs Player <span class="badge badge-soon"><span class="icon" aria-hidden="true">🔒</span> COMING SOON</span></h3>
-            <p>Challenge a friend.</p>
-            
-          </div>
-          <div class="card">
-            <h3>Records <span class="badge badge-soon"><span class="icon" aria-hidden="true">🔒</span> COMING SOON</span></h3>
-            <p>Match history and stats.</p>
-            
-          </div>
-          <div class="card">
-            <h3>Achievements <span class="badge badge-soon"><span class="icon" aria-hidden="true">🔒</span> COMING SOON</span></h3>
-            <p>Earn badges as you play.</p>
-            
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="signup" class="view">
-      <div class="container narrow" style="padding:0">
-        <header style="margin-top:12px"><h2>Create your account</h2><div class="muted">UI preview — not wired</div></header>
-        <div class="steps">
-          <div class="step active" data-step="1">1. About you</div>
-          <div class="step" data-step="2">2. Your identity</div>
-          <div class="step" data-step="3">3. Contact</div>
-        </div>
-        <form id="form">
-          <div class="panel" data-step="1">
-            <label>Name <input required/></label>
-            <label>Age <input type="number" min="1" required/></label>
-            <div class="actions"><button type="button" class="btn btn-primary" onclick="stepTo(2)">Next</button></div>
-          </div>
-          <div class="panel hidden" data-step="2">
-            <label>Screen name <input minlength="3" required/></label>
-            <div class="actions">
-              <button type="button" class="btn btn-ghost" onclick="stepTo(1)">Back</button>
-              <button type="button" class="btn btn-primary" onclick="stepTo(3)">Next</button>
-            </div>
-          </div>
-          <div class="panel hidden" data-step="3">
-            <label>Email address <input type="email" required/></label>
-            <div class="actions">
-              <button type="button" class="btn btn-ghost" onclick="stepTo(2)">Back</button>
-              <button type="button" class="btn btn-primary" onclick="fakeSubmit()">Create account</button>
-            </div>
-          </div>
-        </form>
-        <div id="success" class="hidden success">
-          <h3>Looks good!</h3>
-          <p>This is a visual preview. In the real app this would email a confirmation link.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="admin" class="view">
-      <div class="hero">
-        <h2>Admin · Users <span class="muted">(UI preview)</span></h2>
-        <div class="actions" style="justify-content:flex-start">
-          <button class="btn btn-primary">REFRESH</button>
-          <button class="btn btn-secondary">VIEW OUTBOX</button>
-        </div>
-        <div class="panel" style="margin-top:12px">
-          <table>
-            <thead>
-              <tr><th>Email</th><th>Name</th><th>Screen</th><th>Created</th><th>Last login</th><th>Login count</th><th>Verified</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>alice@example.com</td><td>Alice</td><td>starforge</td><td>2025‑07‑01</td><td>2025‑08‑14</td><td>12</td><td>Yes</td>
-                <td><button class="btn small btn-primary">SEND RESET</button></td>
-              </tr>
-              <tr>
-                <td>bob@example.com</td><td>Bob</td><td>riverstone</td><td>2025‑07‑02</td><td>2025‑08‑10</td><td>7</td><td>No</td>
-                <td><button class="btn small btn-primary">SEND RESET</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  </div>
+<canvas aria-hidden="true" id="starfield"></canvas>
+<div class="container">
+<header>
+<nav class="tabs">
+<a aria-current="page" data-tab="home" href="#home"><svg aria-hidden="true" class="ico" viewbox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z" fill="#1a1200"></path></svg> Home</a>
+<a data-tab="signup" href="#signup"><svg aria-hidden="true" class="ico" viewbox="0 0 24 24"><path d="M12 12a5 5 0 10-5-5 5 5 0 005 5zm-8 9v-1a7 7 0 0114 0v1z" fill="#1a1200"></path></svg> Sign up</a>
+<a data-tab="admin" href="#admin"><svg aria-hidden="true" class="ico" viewbox="0 0 24 24"><path d="M19.14 12.94a7.07 7.07 0 00.06-1l2.08-1.6-2-3.46-2.5.5a7.1 7.1 0 00-.86-.5l-.38-2.54H10.5l-.38 2.54a7.1 7.1 0 00-.86.5l-2.5-.5-2 3.46 2.08 1.6a7.07 7.07 0 000 1L2.76 14.6l2 3.46 2.5-.5c.27.19.56.36.86.5l.38 2.54h4.04l.38-2.54c.3-.14.59-.31.86-.5l2.5.5 2-3.46zM12 15a3 3 0 113-3 3 3 0 01-3 3z" fill="#1a1200"></path></svg> Admin</a>
+</nav>
+<div class="theme-ctrl">Background:
+        <select aria-label="Background" id="themePicker">
+<option selected="" value="warm">Warm Glow</option>
+<option value="cool">Cool Blue</option>
+<option value="aurora">Aurora (Green/Teal)</option>
+<option value="nebula">Nebula (Purple)</option>
+<option value="sunset">Sunset (Orange/Pink)</option>
+<option value="cyber">Cyber Neon</option>
+<option value="mono">Deep Space (Mono)</option>
+</select>
+</div>
+</header>
+<section aria-live="polite" class="notice" role="status">
+<div class="hdr"><span>Welcome to the alpha of my PoC</span></div>
+<p>Many links probably do not work and the single player game vs AI is being updated at random times.</p>
+<p>Thanks for coming and please send me feedback!</p>
+</section>
+<section class="view active" id="home">
+<div class="hero">
+<h2>Welcome!</h2>
+<div class="row">
+<div class="card">
+<h3>Play vs AI</h3>
+<p>Try and beat my current build</p>
+<p class="muted">AI gets tougher every week 😈</p>
+<a class="btn btn-primary" href="/poc.html">OPEN</a>
+</div>
+<div class="card">
+<h3>Play vs Player <span class="badge badge-soon"><span aria-hidden="true" class="icon">🔒</span> COMING SOON</span></h3>
+<p>Challenge a friend.</p>
+</div>
+<div class="card">
+<h3>Records <span class="badge badge-soon"><span aria-hidden="true" class="icon">🔒</span> COMING SOON</span></h3>
+<p>Match history and stats.</p>
+</div>
+<div class="card">
+<h3>Achievements <span class="badge badge-soon"><span aria-hidden="true" class="icon">🔒</span> COMING SOON</span></h3>
+<p>Earn badges as you play.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="view" id="signup">
+<div class="container narrow" style="padding:0">
+<header style="margin-top:12px"><h2>Create your account</h2><div class="muted">UI preview — not wired</div></header>
+<div class="steps">
+<div class="step active" data-step="1">1. About you</div>
+<div class="step" data-step="2">2. Your identity</div>
+<div class="step" data-step="3">3. Contact</div>
+</div>
+<form id="form">
+<div class="panel" data-step="1">
+<label>Name <input required=""/></label>
+<label>Age <input min="1" required="" type="number"/></label>
+<div class="actions"><button class="btn btn-primary" onclick="stepTo(2)" type="button">Next</button></div>
+</div>
+<div class="panel hidden" data-step="2">
+<label>Screen name <input minlength="3" required=""/></label>
+<div class="actions">
+<button class="btn btn-ghost" onclick="stepTo(1)" type="button">Back</button>
+<button class="btn btn-primary" onclick="stepTo(3)" type="button">Next</button>
+</div>
+</div>
+<div class="panel hidden" data-step="3">
+<label>Email address <input required="" type="email"/></label>
+<div class="actions">
+<button class="btn btn-ghost" onclick="stepTo(2)" type="button">Back</button>
+<button class="btn btn-primary" onclick="fakeSubmit()" type="button">Create account</button>
+</div>
+</div>
+</form>
+<div class="hidden success" id="success">
+<h3>Looks good!</h3>
+<p>This is a visual preview. In the real app this would email a confirmation link.</p>
+</div>
+</div>
+</section>
+<section class="view" id="admin">
+<div class="hero">
+<h2>Admin · Users <span class="muted">(UI preview)</span></h2>
+<div class="actions" style="justify-content:flex-start">
+<button class="btn btn-primary">REFRESH</button>
+<button class="btn btn-secondary">VIEW OUTBOX</button>
+</div>
+<div class="panel" style="margin-top:12px">
+<table>
+<thead>
+<tr><th>Email</th><th>Name</th><th>Screen</th><th>Created</th><th>Last login</th><th>Login count</th><th>Verified</th><th>Actions</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>alice@example.com</td><td>Alice</td><td>starforge</td><td>2025‑07‑01</td><td>2025‑08‑14</td><td>12</td><td>Yes</td>
+<td><button class="btn small btn-primary">SEND RESET</button></td>
+</tr>
+<tr>
+<td>bob@example.com</td><td>Bob</td><td>riverstone</td><td>2025‑07‑02</td><td>2025‑08‑10</td><td>7</td><td>No</td>
+<td><button class="btn small btn-primary">SEND RESET</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
 <footer class="site-footer">
-  <div class="foot">
-    <a id="emailLink" href="#contact" data-u="strelzoffgreg" data-d="gmail.com">Email</a>
-  </div>
+<div class="foot">
+<a data-d="gmail.com" data-u="strelzoffgreg" href="#contact" id="emailLink">Email</a>
+</div>
 </footer>
-  <script>
+<script>
   document.addEventListener('DOMContentLoaded', function(){
     var el = document.getElementById('emailLink');
     if (!el) return;
@@ -288,8 +283,7 @@
     el.setAttribute('rel','nofollow');
   });
 </script>
-
-  <script>
+<script>
     function show(id){
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -309,7 +303,7 @@
       document.getElementById('success').classList.remove('hidden');
     }
   </script>
-  <script>
+<script>
     // Starfield with theme presets (live background colorways)
     (function(){
       const c = document.getElementById('starfield');
@@ -476,5 +470,5 @@
       requestAnimationFrame(step);
     })();
   </script>
-</body>
+<script src="assets/main.js"></script></body>
 </html>
