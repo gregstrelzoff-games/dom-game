@@ -375,6 +375,16 @@ function aiChooseBuyStrong(debug){
     if (provLeft <= 8) gamePhase = 'mid';
     if (provLeft <= 4) gamePhase = 'late';
     
+    // Prefer Villages when terminal-heavy to improve action chaining,
+    // but only when we don't have enough coins for higher-value buys
+    try {
+        const zones = [...game.ai.deck, ...game.ai.discard];
+        const terminalNames = ['Smithy','Workshop','Woodcutter'];
+        let terminalCount = 0; let villageCount = 0;
+        for (const c of zones){ if(!c) continue; if (terminalNames.includes(c.name)) terminalCount++; else if (c.name==='Village') villageCount++; }
+        if (coins >= 3 && coins < 5 && can('Village') && terminalCount > villageCount * 1.5) return 'Village';
+    } catch(e){}
+
     if (gamePhase === 'late') {
         if (coins >= 8 && can('Province')) return 'Province';
         if (coins >= 5 && can('Duchy')) return 'Duchy';
