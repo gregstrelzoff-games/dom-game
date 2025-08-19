@@ -269,6 +269,8 @@ function buy(name) {
     game.buys--; game.coins -= def.cost; pile.count--;
     game.player.discard.push(instance(def.name));
     addLog(`You bought ${def.name}.`); Sound.play('buy');
+    // Signal AI to start greening when human buys a Victory card
+    if (def.type === 'Victory') { game.humanStartedGreening = true; }
     checkEndgameFlags();
     render();
 }
@@ -343,7 +345,6 @@ function aiPlayBestActionStrong(debug){
     for (const cardName of engineOrder) {
         const idx = hand.findIndex(c => c.name === cardName);
         if (idx !== -1) {
-            if (cardName === 'Village' && (game.aiActions > 1 || hand.filter(c => c.type === 'Action').length <= 1)) continue;
             bestCardIndex = idx;
             break;
         }
@@ -354,6 +355,11 @@ function aiPlayBestActionStrong(debug){
             const idx = hand.findIndex(c => c.name === cardName);
             if (idx !== -1) { bestCardIndex = idx; break; }
         }
+    }
+    // Fallback: if any Action exists, play it to ensure we consume all available actions
+    if (bestCardIndex === -1) {
+        const anyActionIdx = hand.findIndex(c => c.type === 'Action');
+        if (anyActionIdx !== -1) bestCardIndex = anyActionIdx;
     }
     if (bestCardIndex === -1) return false;
     game.aiActions -= 1;
@@ -385,7 +391,7 @@ function aiChooseBuyStrong(debug){
         if (coins >= 3 && coins < 5 && can('Village') && terminalCount > villageCount * 1.5) return 'Village';
     } catch(e){}
 
-    if (gamePhase === 'late') {
+    if (gamePhase === 'late' || game.humanStartedGreening) {
         if (coins >= 8 && can('Province')) return 'Province';
         if (coins >= 5 && can('Duchy')) return 'Duchy';
         if (coins >= 2 && can('Estate')) return 'Estate';
@@ -468,7 +474,8 @@ function startGame() {
         ai: { deck:[], discard:[], hand:[], played:[] },
         actions: 1, buys: 1, coins: 0, turn: 'player', phase: 'action',
         gameOver: false, endAfterThisTurn: false, turnNum: 1,
-        undo: null
+        undo: null,
+        humanStartedGreening: false
     });
     SUPPLY.forEach(p => {
         if(CARD_DEFS[p.key].type === 'Treasure' || CARD_DEFS[p.key].type === 'Victory') {
