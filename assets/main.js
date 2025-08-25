@@ -1,15 +1,20 @@
 // ========================================================================
-// === Dominion POC - main.js (v10.0.104) ===============================
+// === Dominion POC - main.js (v10.0.128) ===============================
 // ========================================================================
-// Patched: Restored undo lock after drawing cards.
+// Patched: AI strategy updated to "Get Ahead, Stay Ahead." It will now
+// proactively buy VP cards in the mid-game to take and keep the lead.
+// Woodcutter score has been significantly penalized.
 
 // --- Build Fallback -----------------------------------------------------
-const BUILD = { num: '10.0.104' };
+const BUILD = { num: '10.0.128' };
 
 // --- Globals ------------------------------------------------------------
 var logs = [];
 const LOG_MAX = 10;
 let tooltipEl = null;
+let aiCardScores = {};
+let aiBuyPriorityList = [];
+
 
 // --- Sound Engine -------------------------------------------------------
 const Sound = {
@@ -27,7 +32,7 @@ const Sound = {
   noise(dur=0.15, gain=0.25, band=[300,2000]){ if(!this.ctx || this.muted) return; const t=this.now(); const buf=this.ctx.createBuffer(1, this.ctx.sampleRate*dur, this.ctx.sampleRate); const data=buf.getChannelData(0); for(let i=0; i < data.length; i++){data[i]=Math.random()*2-1;} const src=this.ctx.createBufferSource(); src.buffer=buf; let node=src; if(band){ const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=(band[0]+band[1])/2; bp.Q.value=3; src.connect(bp); node=bp; } this.env(node,t,0.005, dur*0.5, 0.0, 0.15, gain); src.start(t); src.stop(t+dur+0.2);},
   seq(notes){ if(!this.ctx || this.muted) return; const base=this.now(); notes.forEach(n=>{ const t=base+(n.t||0); const o=this.ctx.createOscillator(); o.type=n.type||'sine'; o.frequency.setValueAtTime(n.f, t); this.env(o,t,0.005,(n.d||0.1)*0.7,0.0,(n.d||0.1)*0.3,n.g||0.4); o.start(t); o.stop(t+(n.d||0.1)+0.2); }); },
   play(kind){
-    if (game.debugAI) { Chat.post('bot', `🔊 Sound played: ${kind}`); }
+    this.resume();
     switch(kind){ case 'gain': this.tone(880,0.10,'sine',0.35); this.tone(1320,0.10,'triangle',0.25); break; case 'draw': this.chirp(320,520,0.08,'triangle',0.25); break; case 'action': this.chirp(420,860,0.12,'triangle',0.35); break; case 'coins': this.seq([{t:0,f:900,d:0.05,g:0.35,type:'square'},{t:0.06,f:1200,d:0.05,g:0.25,type:'square'}]); break; case 'buy': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:990,d:0.1,g:0.25}]); break; case 'shuffle': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:990,d:0.1,g:0.25}]); break; case 'attack': this.seq([{t:0,f:220,d:0.14,g:0.4,type:'sawtooth'},{t:0.1,f:180,d:0.12,g:0.35,type:'sawtooth'}]); break; case 'reaction': this.chirp(500,1000,0.16,'sine',0.3); break; case 'error': this.tone(140,0.18,'sawtooth',0.35); break; case 'end': this.seq([{t:0,f:660,d:0.1,g:0.35},{t:0.12,f:880,d:0.12,g:0.35},{t:0.26,f:1320,d:0.16,g:0.25}]); break; } }
 };
 
@@ -56,7 +61,11 @@ function drawCards(actor,n){ for(let i=0;i<n;i++) drawOne(actor); }
 function vpOfPile(pile){ return pile.reduce((sum,c)=> sum + (c.points||0), 0); }
 function computeScores(){ const p = vpOfPile([...game.player.deck,...game.player.discard,...game.player.hand]); const a = vpOfPile([...game.ai.deck,...game.ai.discard,...game.ai.hand]); return {p,a}; }
 function getPile(name){ return SUPPLY.find(p=>p.key===name); }
-function checkEndgameFlags(){ const prov = getPile('Province'); if(prov && prov.count===0) game.endAfterThisTurn = true; if(SUPPLY.reduce((n,p)=> n + (p.count===0?1:0), 0) >= 3) game.endAfterThisTurn = true; }
+function checkEndgameFlags(){
+    const prov = getPile('Province');
+    if(prov && prov.count===0) game.endAfterThisTurn = true;
+    if(SUPPLY.reduce((n,p)=> n + (p.count===0?1:0), 0) >= 3) game.endAfterThisTurn = true;
+}
 
 // --- UI Helpers ---------------------------------------------------------
 function addLog(msg, cls){ logs.push({msg, cls}); while(logs.length>LOG_MAX) logs.shift(); const el = document.getElementById('log'); if(el) el.innerHTML = logs.map(l=>`<span class="${l.cls||''}">• ${l.msg}</span>`).join('\n'); }
@@ -205,10 +214,12 @@ function render() {
         const ga = groupRank[a.c.type] ?? 3;
         const gb = groupRank[b.c.type] ?? 3;
         if (ga !== gb) return ga - gb;
+        if (!a.c || !b.c) return 0;
         return a.c.name.localeCompare(b.c.name);
     });
     indexed.forEach(({ c, idx }) => {
         const el = document.createElement('div'); el.className = 'card';
+        if (!c) { el.innerHTML = 'ERROR'; handEl.appendChild(el); return; }
         el.innerHTML = `<div class="title">${cardIcon(c.name)} ${c.name}</div><div class="type">${c.type}</div>`;
         const canPlay = (!game.gameOver && !game.interactionLock && ((c.type === 'Action' && game.phase === 'action' && game.actions > 0) || (c.type === 'Treasure' && game.phase !== 'buy')));
         if (canPlay) { el.classList.add('playable'); el.onclick = () => play(idx); } else { el.classList.add('disabled'); }
@@ -216,7 +227,7 @@ function render() {
     });
     
     if (maybeAutoAdvance()) {
-        return render();
+        render();
     }
 }
 
@@ -262,7 +273,7 @@ function autoPlayTreasures() {
 
 function buy(name) {
     if (game.interactionLock || game.turn !== 'player' || game.phase !== 'buy') return;
-    const pile = SUPPLY.find(p => p.key === name);
+    const pile = getPile(name);
     const def = CARD_DEFS[name];
     if (!pile || !def || pile.count <= 0 || game.buys <= 0 || game.coins < def.cost) return;
     snapshot();
@@ -301,7 +312,18 @@ function showWinner() {
     document.getElementById('winnerDetail').textContent = message;
     document.getElementById('overlay').classList.add('show');
     Sound.play('end');
+    
+    const aiTotalCards = [...game.ai.deck, ...game.ai.discard, ...game.ai.hand, ...game.ai.played];
+    const aiCardList = groupByName(aiTotalCards);
+    Chat.post('bot', `My final deck was: ${aiCardList}`);
+    
+    const playerTotalCards = [...game.player.deck, ...game.player.discard, ...game.player.hand, ...game.player.played];
+    const playerCardList = groupByName(playerTotalCards);
+    Chat.post('bot', `Your final deck was: ${playerCardList}`);
+
+    Chat.post('bot', `Final Score -> You: ${p}, AI: ${a}`);
 }
+
 
 // --- Chat, Coach, & AI ---------------------------------------------------
 const Chat = {
@@ -333,17 +355,54 @@ function init(){const n=document.getElementById('coachNext');const sk=document.g
 function ensureInit(){init();}
 return{init,ensureInit,restart,maybeStart:()=>{}};})();
 
-function groupByName(cards){ const m = new Map(); cards.forEach(c=> m.set(c.name, (m.get(c.name)||0)+1)); return [...m.entries()].sort((a,b)=> a[0].localeCompare(b[0])).map(([n,k])=> `${n}×${k}`).join(', '); }
+function groupByName(cards){ const m = new Map(); cards.forEach(c=> c && m.set(c.name, (m.get(c.name)||0)+1)); return [...m.entries()].sort((a,b)=> a[0].localeCompare(b[0])).map(([n,k])=> `${n}×${k}`).join(', '); }
 function writeAIDebug(lines){ const box = document.getElementById('ai-debug'); const dbgEl = document.getElementById('debugAICheck'); if(!box || !(dbgEl && dbgEl.checked)){ if(box) {box.style.display='none'; box.textContent='';} return; } box.style.display='block'; box.textContent = (lines||[]).join('\n'); }
+
+function aiAnalyzeSupply() {
+    aiCardScores = {};
+    const kingdomCards = SUPPLY.filter(p => CARD_DEFS[p.key] && CARD_DEFS[p.key].type === 'Action');
+    const scoredCards = kingdomCards.map(p => {
+        const card = CARD_DEFS[p.key];
+        let score = 0;
+        let components = 0;
+        const desc = card.desc.toLowerCase();
+
+        if (desc.includes('+1 card')) { score += 10; components++; }
+        if (desc.includes('+2 cards')) { score += 20; components++; }
+        if (desc.includes('+3 cards')) { score += 30; components++; }
+        if (desc.includes('+1 action')) { score += 8; components++; }
+        if (desc.includes('+2 actions')) { score += 16; components++; }
+        if (desc.includes('+1 buy')) { score += 8; components++; }
+        if (desc.includes('+1 coin')) { score += 2; components++; }
+        if (desc.includes('+2 coins')) { score += 4; components++; }
+
+        if (desc.includes('+3 cards')) score += 5;
+
+        if (card.name === 'Merchant') score += 7;
+        if (card.name === 'Workshop') score += 12.5;
+
+        if (!desc.includes('+ action') && card.name !== 'Workshop') {
+            score -= (card.name === 'Woodcutter' ? 10 : 5);
+        }
+        
+        score += (components * 2);
+
+        return { name: card.name, score: score };
+    });
+
+    scoredCards.sort((a, b) => b.score - a.score);
+    aiBuyPriorityList = scoredCards.map(c => c.name);
+    scoredCards.forEach(c => aiCardScores[c.name] = c.score);
+}
+
 function aiPlayBestActionStrong(debug){
     if (game.aiActions <= 0) return false;
     const hand = game.ai.hand;
     let bestCardIndex = -1;
     const engineOrder = ['Village', 'Festival', 'Market', 'Laboratory', 'Merchant'];
     for (const cardName of engineOrder) {
-        const idx = hand.findIndex(c => c.name === cardName);
+        const idx = hand.findIndex(c => c && c.name === cardName);
         if (idx !== -1) {
-            if (cardName === 'Village' && (game.aiActions > 1 || hand.filter(c => c.type === 'Action').length <= 1)) continue;
             bestCardIndex = idx;
             break;
         }
@@ -351,7 +410,7 @@ function aiPlayBestActionStrong(debug){
     if (bestCardIndex === -1) {
         const terminalOrder = ['Smithy', 'Workshop', 'Woodcutter'];
         for (const cardName of terminalOrder) {
-            const idx = hand.findIndex(c => c.name === cardName);
+            const idx = hand.findIndex(c => c && c.name === cardName);
             if (idx !== -1) { bestCardIndex = idx; break; }
         }
     }
@@ -363,51 +422,79 @@ function aiPlayBestActionStrong(debug){
     if (typeof act.effect === 'function') act.effect(game, game.ai);
     return true;
 }
-function aiAutoPlayTreasures(debug){ let add=0; const played=[]; for(let i=game.ai.hand.length-1;i>=0;i--){ if(game.ai.hand[i].type==='Treasure'){ const t = game.ai.hand.splice(i,1)[0]; game.ai.played.push(t); if(t.name==='Silver' && game.merchantPending.ai > 0){ add += (t.value||0) + game.merchantPending.ai; game.merchantPending.ai = 0; if(debug) debug.push(`Merchant bonus on Silver!`); } else { add += (t.value||0); } played.push(t); } } if(debug && played.length) debug.push(`Treasures: ${groupByName(played)} => +${add}`); game.aiCoins += add; return add; }
-function aiGainChoiceUpTo(maxCost){ const provLeft = getPile('Province')?.count ?? 12; if(provLeft<=3){ if(maxCost>=2 && getPile('Estate').count>0) return 'Estate'; } const needVillage = [...game.ai.deck,...game.ai.discard].filter(c=>c.name==='Village').length < ([...game.ai.deck,...game.ai.discard].filter(c=>c.name==='Smithy').length)/2; if(needVillage && maxCost>=3 && getPile('Village').count>0) return 'Village'; if(maxCost>=4 && getPile('Smithy').count>0) return 'Smithy'; if(maxCost>=3 && getPile('Silver').count>0) return 'Silver'; if(maxCost>=3 && getPile('Merchant').count>0) return 'Merchant'; const eligible = SUPPLY.filter(p=> p.count>0 && CARD_DEFS[p.key].cost<=maxCost); return eligible.length? eligible[Math.floor(Math.random()*eligible.length)].key : null; }
+function aiAutoPlayTreasures(debug){ let add=0; const played=[]; for(let i=game.ai.hand.length-1;i>=0;i--){ if(game.ai.hand[i] && game.ai.hand[i].type==='Treasure'){ const t = game.ai.hand.splice(i,1)[0]; game.ai.played.push(t); if(t.name==='Silver' && game.merchantPending.ai > 0){ add += (t.value||0) + game.merchantPending.ai; game.merchantPending.ai = 0; if(debug) debug.push(`Merchant bonus on Silver!`); } else { add += (t.value||0); } played.push(t); } } if(debug && played.length) debug.push(`Treasures: ${groupByName(played)} => +${add}`); game.aiCoins += add; return add; }
+function aiGainChoiceUpTo(maxCost){ const provLeft = getPile('Province')?.count ?? 12; if(provLeft<=3){ if(maxCost>=2 && getPile('Estate').count>0) return 'Estate'; } const allPlayerCards = [...game.ai.deck,...game.ai.discard]; const needVillage = allPlayerCards.filter(c=>c.name==='Village').length < (allPlayerCards.filter(c=>c.name==='Smithy').length)/2; if(needVillage && maxCost>=3 && getPile('Village').count>0) return 'Village'; if(maxCost>=4 && getPile('Smithy').count>0) return 'Smithy'; if(maxCost>=3 && getPile('Silver').count>0) return 'Silver'; if(maxCost>=3 && getPile('Merchant').count>0) return 'Merchant'; const eligible = SUPPLY.filter(p=> p.count>0 && CARD_DEFS[p.key].cost<=maxCost); return eligible.length? eligible[Math.floor(Math.random()*eligible.length)].key : null; }
+
 function aiChooseBuyStrong(debug){
     const coins = game.aiCoins;
-    const provLeft = getPile('Province')?.count ?? 12;
     const can = (name) => { const pile = getPile(name); return pile && pile.count > 0; };
-    let pick = null;
+    const allPlayerCards = [...game.ai.deck, ...game.ai.hand, ...game.ai.discard, ...game.ai.played];
+    const cnt = (name) => allPlayerCards.filter(c => c && c.name === name).length;
+    const actionCardCount = allPlayerCards.filter(c => c && c.type === 'Action').length;
 
-    let gamePhase = 'early';
-    if (provLeft <= 8) gamePhase = 'mid';
-    if (provLeft <= 4) gamePhase = 'late';
-    
-    // Prefer Villages when terminal-heavy to improve action chaining
-    try {
-        const zones = [...game.ai.deck, ...game.ai.discard];
-        const terminalNames = ['Smithy','Workshop','Woodcutter'];
-        let terminalCount = 0; let villageCount = 0;
-        for (const c of zones){ if(!c) continue; if (terminalNames.includes(c.name)) terminalCount++; else if (c.name==='Village') villageCount++; }
-        if (coins >= 3 && can('Village') && terminalCount > villageCount * 1.5) return 'Village';
-    } catch(e){}
+    const isEngineBuildingPhase = actionCardCount < 8;
 
-    if (gamePhase === 'late') {
-        if (coins >= 8 && can('Province')) return 'Province';
-        if (coins >= 5 && can('Duchy')) return 'Duchy';
-        if (coins >= 2 && can('Estate')) return 'Estate';
-    }
-    if (gamePhase === 'mid') {
-        if (coins >= 8 && can('Province')) return 'Province';
-        if (coins >= 5 && can('Duchy') && Math.random() < 0.5) return 'Duchy';
-    }
-    if (coins >= 6 && can('Gold')) return 'Gold';
-    if (coins >= 5) {
-        const midPrefs = ['Festival', 'Market', 'Laboratory', 'Smithy'];
-        pick = midPrefs.find(can);
-        if (pick) return pick;
-    }
-    if (coins >= 4 && can('Smithy')) return 'Smithy';
-    if (coins >= 3) {
-        const earlyPrefs = ['Silver', 'Village', 'Merchant', 'Workshop', 'Woodcutter'];
-        pick = earlyPrefs.find(can);
-        if (pick) return pick;
+    if (isEngineBuildingPhase) {
+        let buyList = aiBuyPriorityList;
+        const affordable = buyList.filter(name => {
+            const def = CARD_DEFS[name];
+            return def && def.cost <= coins && can(name);
+        });
+        if (affordable.length === 0) return null;
+        affordable.sort((a,b) => (CARD_DEFS[b]?.cost || 0) - (CARD_DEFS[a]?.cost || 0));
+        for (const cardName of affordable) {
+            if (['Market', 'Festival', 'Village'].includes(cardName) && cnt(cardName) >= 4) continue;
+            if (['Smithy', 'Laboratory', 'Merchant'].includes(cardName) && cnt(cardName) >= 3) continue;
+            return cardName;
+        }
+    } else {
+        let buyList = [];
+        const { p, a } = computeScores();
+        const behind = a < p;
+        const provLeft = getPile('Province')?.count ?? 12;
+        const isLateGame = provLeft <= 4;
+        const emptyPiles = SUPPLY.reduce((n,p)=> n + (p.count===0?1:0), 0);
+        
+        if (provLeft === 1) {
+            if (coins >= 8 && can('Province')) return 'Province';
+            if (coins >= 5 && can('Duchy')) return 'Duchy';
+            if (coins >= 2 && can('Estate')) return 'Estate';
+            return null;
+        }
+        if (emptyPiles >= 2 || (isLateGame && behind) || (gamePhase === 'mid' && behind)) {
+             buyList.push('Province', 'Duchy', 'Estate');
+        }
+        
+        buyList.push('Gold', 'Silver');
+        buyList.push(...aiBuyPriorityList);
+
+        const uniqueBuyList = [...new Set(buyList)];
+        const affordable = uniqueBuyList.filter(name => {
+            const def = CARD_DEFS[name];
+            return def && def.cost <= coins && can(name);
+        });
+
+        if (affordable.length === 0) return null;
+
+        affordable.sort((aName, bName) => {
+            const aDef = CARD_DEFS[aName];
+            const bDef = CARD_DEFS[bName];
+            if (bDef.cost !== aDef.cost) return bDef.cost - aDef.cost;
+            return uniqueBuyList.indexOf(aName) - uniqueBuyList.indexOf(bName);
+        });
+
+        for (const cardName of affordable) {
+            if (cardName === 'Silver' && cnt('Silver') >= 1) continue;
+            if (cardName === 'Gold' && cnt('Gold') >= 2) continue;
+            if (['Market', 'Festival', 'Village'].includes(cardName) && cnt(cardName) >= 4) continue;
+            if (['Smithy', 'Laboratory', 'Merchant'].includes(cardName) && cnt(cardName) >= 3) continue;
+            return cardName;
+        }
     }
     
-    return pick;
+    return null;
 }
+
 function aiMultiBuy(debug, mode){ let boughtList=[]; let safety=5; while(game.aiBuys>0 && safety-->0){ const choice = aiChooseBuyStrong(debug); if(!choice) break; const pile = getPile(choice); const def = CARD_DEFS[choice]; if(!pile || pile.count<=0 || game.aiCoins < def.cost) break; pile.count--; game.ai.discard.push(instance(choice)); game.aiCoins -= def.cost; game.aiBuys -= 1; boughtList.push(choice); checkEndgameFlags(); } return boughtList; }
 
 function aiTurn(){
@@ -416,29 +503,41 @@ function aiTurn(){
     const dbg = !!(dbgEl && dbgEl.checked);
     const provLeft = getPile('Province')?.count ?? 12;
     let gamePhase = 'early';
-    if (provLeft <= 8) gamePhase = 'mid';
+    if (provLeft <= 11) gamePhase = 'mid';
     if (provLeft <= 4) gamePhase = 'late';
-    const debug = dbg ? [`BUILD: ${BUILD.num}`, `---`, `Turn start - hand: ${groupByName(game.ai.hand)}`, `Game Phase: ${gamePhase} (${provLeft} Provinces left)`] : [];
+    const debug = dbg ? [`BUILD: ${BUILD.num}`, `---`, `Turn start - hand: ${groupByName(game.ai.hand)}`, `Game Phase: ${gamePhase} (${provLeft} Provinces left)`, `Buy Priority: ${aiBuyPriorityList.join(' > ')}`] : [];
 
     game.aiActions=1; game.aiBuys=1; game.aiCoins=0; game.merchantPending.ai = 0;
-    let playedSomething=true;
+    
     let guard=10;
-    while(playedSomething && guard-->0){ playedSomething = aiPlayBestActionStrong(debug); }
+    while(game.aiActions > 0 && guard-- > 0) {
+        const playedACard = aiPlayBestActionStrong(debug);
+        if (!playedACard) break;
+    }
+    
     const gained = aiAutoPlayTreasures(debug);
     const boughtList = aiMultiBuy(debug, game.aiMode);
+    
     if(dbg) {
         debug.push(`---`);
         if(boughtList.length) debug.push(`Bought: ${boughtList.join(', ')}`);
         debug.push(`End coins: ${game.aiCoins}, End buys: ${game.aiBuys}`);
-        document.getElementById('ai-status').innerHTML = debug.join('<br>');
-    } else {
-        const bought = boughtList.length ? boughtList.join(', ') : 'nothing';
-        document.getElementById('ai-status').textContent = `AI played actions, +${gained} coins, and bought ${bought}.`;
     }
+    
     game.ai.discard.push(...game.ai.hand, ...game.ai.played);
     game.ai.hand.length=0;
     game.ai.played.length=0;
     for(let i=0;i<5;i++) drawOne(game.ai);
+    
+    if(dbg) {
+        debug.push(`Turn end - new hand: ${groupByName(game.ai.hand)}`);
+    }
+    
+    writeAIDebug(debug);
+    
+    const boughtForLog = boughtList.length ? boughtList.join(', ') : 'nothing';
+    document.getElementById('ai-status').textContent = `AI played actions, +${gained} coins, and bought ${boughtForLog}.`;
+    
     checkEndgameFlags();
     if(endIfNeeded()) return;
     
@@ -477,6 +576,8 @@ function startGame() {
         }
     });
 
+    aiAnalyzeSupply();
+
     const p = game.player, a = game.ai;
     for(let i=0;i<7;i++){ p.deck.push(instance('Copper')); a.deck.push(instance('Copper')); }
     for(let i=0;i<3;i++){ p.deck.push(instance('Estate')); a.deck.push(instance('Estate')); }
@@ -494,7 +595,11 @@ function startGame() {
 // --- Game Initialization ------------------------------------------------
 function init() {
     const buildEl = document.getElementById('build');
-    if (buildEl) buildEl.textContent = `Build ${BUILD.num}`;
+    if (buildEl) {
+        const today = new Date();
+        const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        buildEl.textContent = `Build ${BUILD.num} (${dateString})`;
+    }
     Chat.init();
     Coach.init();
     Sound.load();
@@ -538,27 +643,3 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
-// ===== Strong AI Engine v10.0.105 (collision-safe) =======================
-(function(global){
-  'use strict';
-  if (!global.game) global.game = { player:{deck:[],hand:[],discard:[],played:[]}, ai:{deck:[],hand:[],discard:[],played:[]}, aiActions:1, aiBuys:1, aiCoins:0, turnNum:1 };
-  const $ = (sel, root=document)=> (root||document).querySelector(sel);
-  const getPile = global.getPile || (name => (global.SUPPLY||[]).find(p=>p.key===name));
-  const instance = global.instance || (name => ({ ...(global.CARD_DEFS||{})[name] }));
-  function addLog(){ const s=Array.from(arguments).join(' '); const pane=$('#log'); if(pane){ const d=document.createElement('div'); d.className='logline'; d.textContent=s; pane.appendChild(d); pane.scrollTop=pane.scrollHeight; } try{ console.log('[LOG]', s);}catch(e){} }
-  function scoreActor(a){ let s=0; for(const z of [a.deck,a.hand,a.discard,a.played]) for(const c of z) if(c.type==='Victory') s += (c.vp ?? c.points ?? 0); return s; }
-  function computeScores(){ return { p: scoreActor(global.game.player), a: scoreActor(global.game.ai) }; }
-  function allCards(a){ return a.deck.concat(a.discard, a.hand, a.played); }
-  function aiSnapshotStats(){ const pool=allCards(global.game.ai), counts=Object.create(null); for(const c of pool){ counts[c.name]=(counts[c.name]||0)+1; } const terminals=['Smithy','Woodcutter','Workshop']; const villages=['Village','Festival','Market','Laboratory','Merchant']; const termCount=pool.filter(c=>terminals.includes(c.name)).length; const villageLike=pool.filter(c=>villages.includes(c.name)).length; return { counts, termCount, villageLike }; }
-  function aiPlayBestActionStrong(debug){ if ((global.game.aiActions|0)<=0) return false; const hand=global.game.ai.hand; const has=(n)=> hand.findIndex(c=>c.name===n); const count=(pred)=> hand.reduce((s,c)=> s+(pred(c)?1:0),0); const isTerm=(c)=> (c.name==='Smithy'||c.name==='Woodcutter'||c.name==='Workshop'); const terminals=count(isTerm); let idx=-1; if (terminals >= (global.game.aiActions|0)){ idx=has('Village'); if(idx===-1) idx=has('Festival'); if(idx===-1) idx=has('Market'); if(idx===-1) idx=has('Laboratory'); if(idx===-1) idx=has('Merchant'); } if (idx===-1){ idx=has('Festival'); if(idx===-1) idx=has('Market'); if(idx===-1) idx=has('Laboratory'); if(idx===-1) idx=has('Village'); if(idx===-1) idx=has('Merchant'); } if (idx===-1){ idx=has('Smithy'); if(idx===-1) idx=has('Workshop'); if(idx===-1) idx=has('Woodcutter'); } if (idx===-1) return false; global.game.aiActions -= 1; const [act]=hand.splice(idx,1); global.game.ai.played.push(act); if (debug) debug.push('Action: '+act.name); if (typeof act.effect==='function') act.effect(global.game, global.game.ai); return true; }
-  function aiGainChoiceUpTo(maxCost){ const provLeft = getPile('Province')?.count ?? 12; if (provLeft<=3 && maxCost>=2 && getPile('Estate')?.count>0) return 'Estate'; const order=[['Laboratory',5],['Market',5],['Festival',5],['Smithy',4],['Village',3],['Silver',3],['Merchant',3],['Workshop',3]]; for (const [nm,c] of order){ if (c<=maxCost){ const p=getPile(nm); if (p && p.count>0) return nm; } } const defs=global.CARD_DEFS||{}; const sup=global.SUPPLY||[]; const elig=sup.filter(p=> p.count>0 && (defs[p.key]?.cost||0)<=maxCost); if(!elig.length) return null; elig.sort((a,b)=> (defs[b.key].cost||0)-(defs[a.key].cost||0)); return elig[0].key; }
-  global.aiGainChoiceUpTo = aiGainChoiceUpTo;
-  function aiChooseBuyStrong(debug){ const coins=global.game.aiCoins|0; const can=(n)=>{ const p=getPile(n); return p && p.count>0; }; const provLeft=getPile('Province')?.count ?? 12; const have=aiSnapshotStats(); const cnt=(n)=> (have.counts[n]||0); const sc=computeScores(); const behind=sc.a < sc.p; const turn=global.game.turnNum|0; let phase='early'; if (provLeft<=8 || turn>=9) phase='mid'; if (provLeft<=4 || turn>=13) phase='late'; if (coins>=8 && can('Province')) return 'Province'; if (phase==='late'){ if (coins>=5 && can('Duchy') && (provLeft<=2 || behind || Math.random()<0.35)) return 'Duchy'; if (coins>=2 && can('Estate') && (provLeft<=1 || (behind && Math.random()<0.35))) return 'Estate'; } if (coins>=6 && can('Gold')) return 'Gold'; if (coins>=5){ for(const n of ['Festival','Market','Laboratory']) if (can(n)) return n; if (phase==='mid' && provLeft<=6 && Math.random()<0.15 && can('Duchy')) return 'Duchy'; } const desiredTerm=Math.max(1, Math.floor(have.villageLike*2 + 1)); const tooManyTerm = have.termCount >= desiredTerm; if (coins>=4){ if (!tooManyTerm && can('Smithy')) return 'Smithy'; if (can('Silver')) return 'Silver'; } if (coins>=3){ if (phase==='early' && cnt('Silver')<2 && can('Silver')) return 'Silver'; if (tooManyTerm && can('Village')) return 'Village'; if (cnt('Silver')>=1 && can('Merchant')) return 'Merchant'; if (can('Workshop') && Math.random()<0.25) return 'Workshop'; if (can('Silver')) return 'Silver'; if (can('Woodcutter') && phase!=='early') return 'Woodcutter'; } return null; }
-  function aiMultiBuy(debug){ const bought=[]; let guard=6; while((global.game.aiBuys|0)>0 && guard-- > 0){ const pick=aiChooseBuyStrong(debug); if(!pick) break; const pile=getPile(pick); const def=(global.CARD_DEFS||{})[pick] || { cost:99 }; if (!pile || pile.count<=0 || (global.game.aiCoins|0) < (def.cost|0)) break; pile.count--; global.game.ai.discard.push(instance(pick)); global.game.aiCoins -= def.cost; global.game.aiBuys -= 1; bought.push(pick); if (debug) debug.push('Buy: '+pick+' (-'+def.cost+', '+global.game.aiCoins+' left)'); } return bought; }
-  function aiStartTurn(){ global.game.aiCoins=0; global.game.aiActions=1; global.game.aiBuys=1; }
-  function aiCleanup(){ global.game.ai.discard.push(...global.game.ai.hand, ...global.game.ai.played); global.game.ai.hand.length=0; global.game.ai.played.length=0; (global.drawCards||function(a,n){ while(n-- > 0){ if(a.deck.length===0){ a.deck=a.discard.slice().sort(()=>Math.random()-0.5); a.discard.length=0; } if(a.deck.length>0) a.hand.push(a.deck.pop()); } })(global.game.ai,5); }
-  function aiTurn(){ const dbg=[]; aiStartTurn(); let guard=12; while((global.game.aiActions|0)>0 && guard-- > 0){ if(!aiPlayBestActionStrong(dbg)) break; } const t=global.game.ai.hand.filter(c=> c.type==='Treasure'); global.game.aiCoins += t.reduce((s,c)=> s+(c.value||0),0); aiMultiBuy(dbg); const status=$('#ai-status'); if (status) status.textContent = dbg.join(' | ') || 'AI turn complete.'; addLog(dbg.join(' | ')); aiCleanup(); }
-  global.AI = global.AI || {}; global.AI.turn = aiTurn;
-})(window);
-// =======================================================================
