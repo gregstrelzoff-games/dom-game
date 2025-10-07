@@ -1,20 +1,20 @@
 // ========================================================================
-// === Dominion POC - main.js (v10.0.128) ===============================
+// === Dominion POC - main.js (v10.0.138) ===============================
 // ========================================================================
-// Patched: AI strategy updated to "Get Ahead, Stay Ahead." It will now
-// proactively buy VP cards in the mid-game to take and keep the lead.
-// Woodcutter score has been significantly penalized.
+// Patched: AI strategy updated with a two-phase "Golden Buys" system.
+// - Phase 1 (Opening): The AI is restricted to buying only Smithy,
+//   Village, Market, or Festival. If it cannot afford one, it buys
+//   nothing. This phase lasts until it has 6 of these cards.
+// - Phase 2 (Mid-Game): Its dynamic archetype logic takes over to
+//   fine-tune the engine and pivot to victory.
 
 // --- Build Fallback -----------------------------------------------------
-const BUILD = { num: '10.0.128' };
+const BUILD = { num: '10.0.138' };
 
 // --- Globals ------------------------------------------------------------
 var logs = [];
 const LOG_MAX = 10;
 let tooltipEl = null;
-let aiCardScores = {};
-let aiBuyPriorityList = [];
-
 
 // --- Sound Engine -------------------------------------------------------
 const Sound = {
@@ -358,43 +358,6 @@ return{init,ensureInit,restart,maybeStart:()=>{}};})();
 function groupByName(cards){ const m = new Map(); cards.forEach(c=> c && m.set(c.name, (m.get(c.name)||0)+1)); return [...m.entries()].sort((a,b)=> a[0].localeCompare(b[0])).map(([n,k])=> `${n}×${k}`).join(', '); }
 function writeAIDebug(lines){ const box = document.getElementById('ai-debug'); const dbgEl = document.getElementById('debugAICheck'); if(!box || !(dbgEl && dbgEl.checked)){ if(box) {box.style.display='none'; box.textContent='';} return; } box.style.display='block'; box.textContent = (lines||[]).join('\n'); }
 
-function aiAnalyzeSupply() {
-    aiCardScores = {};
-    const kingdomCards = SUPPLY.filter(p => CARD_DEFS[p.key] && CARD_DEFS[p.key].type === 'Action');
-    const scoredCards = kingdomCards.map(p => {
-        const card = CARD_DEFS[p.key];
-        let score = 0;
-        let components = 0;
-        const desc = card.desc.toLowerCase();
-
-        if (desc.includes('+1 card')) { score += 10; components++; }
-        if (desc.includes('+2 cards')) { score += 20; components++; }
-        if (desc.includes('+3 cards')) { score += 30; components++; }
-        if (desc.includes('+1 action')) { score += 8; components++; }
-        if (desc.includes('+2 actions')) { score += 16; components++; }
-        if (desc.includes('+1 buy')) { score += 8; components++; }
-        if (desc.includes('+1 coin')) { score += 2; components++; }
-        if (desc.includes('+2 coins')) { score += 4; components++; }
-
-        if (desc.includes('+3 cards')) score += 5;
-
-        if (card.name === 'Merchant') score += 7;
-        if (card.name === 'Workshop') score += 12.5;
-
-        if (!desc.includes('+ action') && card.name !== 'Workshop') {
-            score -= (card.name === 'Woodcutter' ? 10 : 5);
-        }
-        
-        score += (components * 2);
-
-        return { name: card.name, score: score };
-    });
-
-    scoredCards.sort((a, b) => b.score - a.score);
-    aiBuyPriorityList = scoredCards.map(c => c.name);
-    scoredCards.forEach(c => aiCardScores[c.name] = c.score);
-}
-
 function aiPlayBestActionStrong(debug){
     if (game.aiActions <= 0) return false;
     const hand = game.ai.hand;
@@ -423,7 +386,50 @@ function aiPlayBestActionStrong(debug){
     return true;
 }
 function aiAutoPlayTreasures(debug){ let add=0; const played=[]; for(let i=game.ai.hand.length-1;i>=0;i--){ if(game.ai.hand[i] && game.ai.hand[i].type==='Treasure'){ const t = game.ai.hand.splice(i,1)[0]; game.ai.played.push(t); if(t.name==='Silver' && game.merchantPending.ai > 0){ add += (t.value||0) + game.merchantPending.ai; game.merchantPending.ai = 0; if(debug) debug.push(`Merchant bonus on Silver!`); } else { add += (t.value||0); } played.push(t); } } if(debug && played.length) debug.push(`Treasures: ${groupByName(played)} => +${add}`); game.aiCoins += add; return add; }
-function aiGainChoiceUpTo(maxCost){ const provLeft = getPile('Province')?.count ?? 12; if(provLeft<=3){ if(maxCost>=2 && getPile('Estate').count>0) return 'Estate'; } const allPlayerCards = [...game.ai.deck,...game.ai.discard]; const needVillage = allPlayerCards.filter(c=>c.name==='Village').length < (allPlayerCards.filter(c=>c.name==='Smithy').length)/2; if(needVillage && maxCost>=3 && getPile('Village').count>0) return 'Village'; if(maxCost>=4 && getPile('Smithy').count>0) return 'Smithy'; if(maxCost>=3 && getPile('Silver').count>0) return 'Silver'; if(maxCost>=3 && getPile('Merchant').count>0) return 'Merchant'; const eligible = SUPPLY.filter(p=> p.count>0 && CARD_DEFS[p.key].cost<=maxCost); return eligible.length? eligible[Math.floor(Math.random()*eligible.length)].key : null; }
+
+function aiGainChoiceUpTo(maxCost) {
+    if (maxCost <= 1) return null;
+
+    const allPlayerCards = [...game.ai.deck, ...game.ai.discard, ...game.ai.hand, ...game.ai.played];
+    const can = (name) => { const pile = getPile(name); return pile && pile.count > 0; };
+    
+    const villageLikeCards = allPlayerCards.filter(c => c && (c.name === 'Village' || c.name === 'Festival')).length;
+    const terminalActions = allPlayerCards.filter(c => c && c.type === 'Action' && c.name !== 'Village' && c.name !== 'Festival').length;
+    if (terminalActions > (villageLikeCards * 2) && maxCost >= 3 && can('Village')) {
+        return 'Village';
+    }
+
+    const silverCount = allPlayerCards.filter(c => c && c.name === 'Silver').length;
+    if (silverCount < 2 && maxCost >= 3 && can('Silver')) {
+        return 'Silver';
+    }
+
+    const provLeft = getPile('Province')?.count ?? 12;
+    const { p, a } = computeScores();
+    if (provLeft <= 4 && a < p && maxCost >= 2 && can('Estate')) {
+        return 'Estate';
+    }
+    
+    const eligible = SUPPLY.filter(p => p.count > 0 && CARD_DEFS[p.key].cost <= maxCost);
+    if (!eligible.length) return null;
+
+    let bestChoice = null;
+    let maxVal = -1;
+
+    for (const pile of eligible) {
+        const def = CARD_DEFS[pile.key];
+        let value = def.cost * 10;
+        if (def.type === 'Action') value += 5;
+        if (def.name === 'Silver') value += 3;
+
+        if (value > maxVal) {
+            maxVal = value;
+            bestChoice = pile.key;
+        }
+    }
+
+    return bestChoice;
+}
 
 function aiChooseBuyStrong(debug){
     const coins = game.aiCoins;
@@ -431,71 +437,121 @@ function aiChooseBuyStrong(debug){
     const allPlayerCards = [...game.ai.deck, ...game.ai.hand, ...game.ai.discard, ...game.ai.played];
     const cnt = (name) => allPlayerCards.filter(c => c && c.name === name).length;
     const actionCardCount = allPlayerCards.filter(c => c && c.type === 'Action').length;
+    const provLeft = getPile('Province')?.count ?? 12;
+    const { p, a } = computeScores();
+    const isAhead = a > p;
 
-    const isEngineBuildingPhase = actionCardCount < 8;
-
-    if (isEngineBuildingPhase) {
-        let buyList = aiBuyPriorityList;
-        const affordable = buyList.filter(name => {
-            const def = CARD_DEFS[name];
-            return def && def.cost <= coins && can(name);
-        });
-        if (affordable.length === 0) return null;
-        affordable.sort((a,b) => (CARD_DEFS[b]?.cost || 0) - (CARD_DEFS[a]?.cost || 0));
-        for (const cardName of affordable) {
-            if (['Market', 'Festival', 'Village'].includes(cardName) && cnt(cardName) >= 4) continue;
-            if (['Smithy', 'Laboratory', 'Merchant'].includes(cardName) && cnt(cardName) >= 3) continue;
-            return cardName;
+    // --- Phase 1: "Golden Buys" Opening Book ---
+    const goldenBuyCardsInDeck = cnt('Smithy') + cnt('Village') + cnt('Market') + cnt('Festival');
+    if (goldenBuyCardsInDeck < 6) {
+        if (debug) debug.push(`Strategy: Golden Buys Opening (${goldenBuyCardsInDeck}/6)`);
+        const goldenBuysByCost = ['Market', 'Festival', 'Smithy', 'Village']; // Sorted by cost descending
+        for (const cardName of goldenBuysByCost) {
+            const def = CARD_DEFS[cardName];
+            if (def && coins >= def.cost && can(cardName)) {
+                return cardName; // Buy the most expensive affordable Golden Buy
+            }
         }
-    } else {
-        let buyList = [];
-        const { p, a } = computeScores();
-        const behind = a < p;
-        const provLeft = getPile('Province')?.count ?? 12;
-        const isLateGame = provLeft <= 4;
-        const emptyPiles = SUPPLY.reduce((n,p)=> n + (p.count===0?1:0), 0);
-        
+        return null; // If nothing affordable, buy nothing to keep deck clean
+    }
+
+    // --- Phase 2: Mid/Late-Game Dynamic Strategy ---
+    if (debug && game.turnNum > 4) debug.push(`Strategy: Mid-game Dynamic Engine Tuning`);
+
+    // Rule 1: Province Buys
+    if (coins >= 8 && can('Province')) {
         if (provLeft === 1) {
-            if (coins >= 8 && can('Province')) return 'Province';
-            if (coins >= 5 && can('Duchy')) return 'Duchy';
-            if (coins >= 2 && can('Estate')) return 'Estate';
-            return null;
-        }
-        if (emptyPiles >= 2 || (isLateGame && behind) || (gamePhase === 'mid' && behind)) {
-             buyList.push('Province', 'Duchy', 'Estate');
-        }
-        
-        buyList.push('Gold', 'Silver');
-        buyList.push(...aiBuyPriorityList);
-
-        const uniqueBuyList = [...new Set(buyList)];
-        const affordable = uniqueBuyList.filter(name => {
-            const def = CARD_DEFS[name];
-            return def && def.cost <= coins && can(name);
-        });
-
-        if (affordable.length === 0) return null;
-
-        affordable.sort((aName, bName) => {
-            const aDef = CARD_DEFS[aName];
-            const bDef = CARD_DEFS[bName];
-            if (bDef.cost !== aDef.cost) return bDef.cost - aDef.cost;
-            return uniqueBuyList.indexOf(aName) - uniqueBuyList.indexOf(bName);
-        });
-
-        for (const cardName of affordable) {
-            if (cardName === 'Silver' && cnt('Silver') >= 1) continue;
-            if (cardName === 'Gold' && cnt('Gold') >= 2) continue;
-            if (['Market', 'Festival', 'Village'].includes(cardName) && cnt(cardName) >= 4) continue;
-            if (['Smithy', 'Laboratory', 'Merchant'].includes(cardName) && cnt(cardName) >= 3) continue;
-            return cardName;
+            if ((a + 6) <= p) {
+                if (debug) debug.push(`Strategy: Avoiding loss on last Province. Switching to Duchy.`);
+                if (coins >= 5 && can('Duchy')) return 'Duchy';
+            } else {
+                if (debug) debug.push(`Strategy: Buying last Province to WIN.`);
+                return 'Province';
+            }
+        } else {
+            return 'Province';
         }
     }
     
+    // Rule 2: Engine Ratio and Balance Checks
+    const villageLikeCards = cnt('Village') + cnt('Festival');
+    const terminalActions = actionCardCount - villageLikeCards;
+    const drawCards = cnt('Smithy') + cnt('Laboratory');
+
+    const needsVillage = terminalActions > (villageLikeCards * 1.5) || (actionCardCount > 4 && villageLikeCards < 2);
+    if (needsVillage) {
+        if (debug) debug.push(`Strategy: Need Support (${villageLikeCards} villages for ${terminalActions} terminals).`);
+        if (coins >= 5 && can('Festival')) return 'Festival';
+        if (coins >= 3 && can('Village')) return 'Village';
+    }
+
+    const needsDraw = drawCards < (villageLikeCards / 2);
+    if (needsDraw) {
+        if (debug) debug.push(`Strategy: Need Draw (${drawCards} draw for ${villageLikeCards} villages).`);
+        if (coins >= 5 && can('Laboratory')) return 'Laboratory';
+        if (coins >= 4 && can('Smithy')) return 'Smithy';
+    }
+
+    // Rule 3: Late Game VP Buys
+    const isLateGame = provLeft <= 5;
+    const threePilesEnding = SUPPLY.reduce((n,p)=> n + (p.count===0?1:0), 0) >= 2;
+
+    if (isLateGame || threePilesEnding) {
+        if (isAhead) {
+            if (debug) debug.push(`Strategy: Pressing Advantage (Ahead)`);
+            if (coins >= 6 && can('Gold')) return 'Gold';
+            if (coins >= 5 && can('Duchy')) return 'Duchy';
+            if (coins >= 2 && can('Estate')) return 'Estate';
+        } else {
+            if (debug) debug.push(`Strategy: Desperate Measures (Behind)`);
+            if (provLeft <= 3) {
+                if (coins >= 5 && can('Duchy')) return 'Duchy';
+                if (coins >= 2 && can('Estate')) return 'Estate';
+            }
+        }
+    }
+
+    // Rule 4: Mid-Game Economy and Payload
+    if (provLeft <= 7 && coins >= 6 && can('Gold')) {
+        if (debug) debug.push(`Strategy: Pivoting to Gold for late-game.`);
+        return 'Gold';
+    }
+    if (coins >= 5 && can('Market')) return 'Market';
+    if (coins >= 5 && can('Festival')) return 'Festival';
+    if (coins >= 3 && can('Silver')) return 'Silver';
+
     return null;
 }
 
-function aiMultiBuy(debug, mode){ let boughtList=[]; let safety=5; while(game.aiBuys>0 && safety-->0){ const choice = aiChooseBuyStrong(debug); if(!choice) break; const pile = getPile(choice); const def = CARD_DEFS[choice]; if(!pile || pile.count<=0 || game.aiCoins < def.cost) break; pile.count--; game.ai.discard.push(instance(choice)); game.aiCoins -= def.cost; game.aiBuys -= 1; boughtList.push(choice); checkEndgameFlags(); } return boughtList; }
+function aiMultiBuy(debug, mode) {
+    let boughtList = [];
+    let safety = 5;
+    while (game.aiBuys > 0 && safety-- > 0) {
+        const choice = aiChooseBuyStrong(debug);
+        if (!choice) break;
+
+        const pile = getPile(choice);
+        const def = CARD_DEFS[choice];
+
+        if (!def || typeof def.cost === 'undefined') {
+            console.error(`AI chose card "${choice}" with invalid definition. Aborting buys.`);
+            if (debug) debug.push(`ERROR: Invalid card def for ${choice}`);
+            break;
+        }
+
+        if (!pile || pile.count <= 0 || game.aiCoins < def.cost) {
+            break;
+        }
+
+        pile.count--;
+        game.ai.discard.push(instance(choice));
+        game.aiCoins -= def.cost;
+        game.aiBuys -= 1;
+        boughtList.push(choice);
+        checkEndgameFlags();
+    }
+    return boughtList;
+}
 
 function aiTurn(){
     if(game.gameOver) return;
@@ -503,9 +559,11 @@ function aiTurn(){
     const dbg = !!(dbgEl && dbgEl.checked);
     const provLeft = getPile('Province')?.count ?? 12;
     let gamePhase = 'early';
-    if (provLeft <= 11) gamePhase = 'mid';
-    if (provLeft <= 4) gamePhase = 'late';
-    const debug = dbg ? [`BUILD: ${BUILD.num}`, `---`, `Turn start - hand: ${groupByName(game.ai.hand)}`, `Game Phase: ${gamePhase} (${provLeft} Provinces left)`, `Buy Priority: ${aiBuyPriorityList.join(' > ')}`] : [];
+    if (provLeft <= 8) gamePhase = 'mid';
+    if (provLeft <= 5) gamePhase = 'late';
+    const { p, a } = computeScores();
+
+    const debug = dbg ? [`BUILD: ${BUILD.num}`, `---`, `Turn start - hand: ${groupByName(game.ai.hand)}`, `Game Phase: ${gamePhase} (${provLeft} Prov left)`, `Score: P${p} vs A${a}`] : [];
 
     game.aiActions=1; game.aiBuys=1; game.aiCoins=0; game.merchantPending.ai = 0;
     
@@ -516,11 +574,14 @@ function aiTurn(){
     }
     
     const gained = aiAutoPlayTreasures(debug);
+    if(dbg) debug.push(`Coins after treasure: ${game.aiCoins}`);
+    
     const boughtList = aiMultiBuy(debug, game.aiMode);
     
     if(dbg) {
         debug.push(`---`);
         if(boughtList.length) debug.push(`Bought: ${boughtList.join(', ')}`);
+        else debug.push(`Bought: nothing`);
         debug.push(`End coins: ${game.aiCoins}, End buys: ${game.aiBuys}`);
     }
     
@@ -575,8 +636,6 @@ function startGame() {
             p.count = 10;
         }
     });
-
-    aiAnalyzeSupply();
 
     const p = game.player, a = game.ai;
     for(let i=0;i<7;i++){ p.deck.push(instance('Copper')); a.deck.push(instance('Copper')); }

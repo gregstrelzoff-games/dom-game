@@ -1,8 +1,9 @@
 // ========================================================================
-// === Dominion POC - poc-game.js (v10.0.100 DATA-ONLY) =================
+// === Dominion POC - poc-game.js (v10.0.136) ===========================
 // ========================================================================
 // This file now only contains card, supply, and game state definitions.
-// All functions have been moved to main.js to resolve load order errors.
+// Patched: Workshop effect updated to call the new AI choice logic in
+// main.js, preventing a hang and allowing the AI to use the card.
 
 // ------------------- Card Definitions -------------------
 const CARD_DEFS = {
@@ -27,7 +28,24 @@ const CARD_DEFS = {
   Merchant:  { name:'Merchant',  cost:3, type:'Action',   desc:'Draw 1, +1 Action. The first time you play a Silver this turn, +$1.',
                effect: (g,actor)=>{ drawCards(actor,1); if(actor===g.player){ g.actions += 1; g.merchantPending.player++; addLog('You played Merchant: +1 card, +1 action. The first time you play a Silver this turn, +$1.'); } else { g.aiActions += 1; g.merchantPending.ai++; } } },
   Workshop:  { name:'Workshop',  cost:3, type:'Action',   desc:'Gain a card costing up to 4 to your discard',
-               effect: (g,actor)=>{ if(actor===g.player){ openGainChoice(4, g.player, 'Workshop'); } else { const pick = AI.gainChoice(4); if(pick){ const pile=getPile(pick); if(pile&&pile.count>0){ pile.count--; g.ai.discard.push(instance(pick)); } } } } },
+               effect: (g,actor)=>{
+                 if (actor === g.player) {
+                     // If the actor is the human player, open the UI overlay.
+                     openGainChoice(4, actor, 'Workshop');
+                 } else {
+                     // If the actor is the AI, call the new AI-specific choice function from main.js.
+                     const choice = aiGainChoiceUpTo(4);
+                     if (choice) {
+                         const pile = getPile(choice);
+                         if (pile && pile.count > 0) {
+                             pile.count--;
+                             actor.discard.push(instance(choice));
+                             // AI turn summary will report what it did.
+                         }
+                     }
+                 }
+               }
+             },
 };
 
 const SUPPLY = [
